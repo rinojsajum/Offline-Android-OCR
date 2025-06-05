@@ -1,0 +1,35 @@
+# OCR
+
+Uma aplicação de reconhecimento de caracteres (OCR) baseada em Tesseract que reconhece textos em imagens.
+
+Esta aplicação é baseada em <a href="https://github.com/tesseract-ocr/tesseract/blob/master/README.md">Tesseract 4</a> e a primeira baseada em Tesseract 4.
+Após descarregar os dados de treino, a aplicação faz tudo sem ligação à Internet.
+
+Traduza esta aplicação no [Weblate](https://hosted.weblate.org/projects/android-ocr).
+
+🚀 <font color="#2467d6"><b><b>Características</b></font>
+* A precisão mais alta.
+* Extrair texto de imagens.
+* Copiar dados para a área de transferência.
+* Selecione qualquer parte dos dados.
+* Processa vários idiomas numa única imagem.
+* Baseado nos últimos <a href="https://github.com/tesseract-ocr/tessdoc/blob/master/Data-Files.md">Dados de treino</a>.
+* Mais que 120 <a href="https://tesseract-ocr.github.io/tessdoc/Data-Files">idiomas</a> reconhecidos.
+* 3 tipo de dados, ou seja, <a href="https://github.com/tesseract-ocr/tessdata">Padrão</a>, <a href="https://github.com/tesseract-ocr/tessdata_best">melhor</a>, <a href="https://github.com/tesseract-ocr/tessdata_fast">rápido</a>, para mais informações <a href="https://github.com/tesseract-ocr/tessdoc/blob/master/Data-Files.md">clique aqui</a>.
+* Reconhecimento/deteção de equações matemáticas (ainda não testado).
+* Processa imagens diretamente da galeria do seu dispositivo através do menu partilhar.
+
+
+ <font color="#2467d6"><b>Permissões necessárias</b></font>
+
+* Internet: descarregar dados de treino
+* Aceder ao estado da Internet: para descarregar os dados do treino.
+* Nota: nenhum dos seus dados será enviado para qualquer lugar
+
+📓 <font color="#2467d6"><b>Licença</b></font>
+
+* Tesseract e dados de Tesseract: <a href="https://github.com/tesseract-ocr/tesseract/blob/master/LICENSE">Apache 2.0</a>.
+* Tesseract4Android: <a href="https://github.com/adaptech-cz/Tesseract4Android/blob/master/LICENSE">Apache 2.0</a>.
+* ImageCropper: <a href="https://github.com/ArthurHub/Android-Image-Cropper/blob/master/LICENSE.txt">Apache 2.0</a>.
+
+Tornado possível graças à biblioteca <a href="https://github.com/adaptech-cz/Tesseract4Android">Tesseract4Android</a>.

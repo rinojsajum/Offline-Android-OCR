@@ -1,0 +1,28 @@
+- Desactivar recordar últimos resultados(por @urlordjames)
+- Nuevo icono (por @nucleus-ffm)
+
+- Traducir en Weblate
+
+- Nuevos idiomas:
+
+- Chino Simplificado Vertical, Chino Tradicional Vertical,Japonés (vertical),Coreano (vertical)
+- Alemán Fraktur, Danés Fraktur,Eslovaco Fraktur
+- Corso
+- Dhivehi; Divehi; Maldivo
+- Gaélico escocés; Gaélico
+- Dhivehi; Divehi; Maldivo
+- Luxemburgués; Letzeburgesch
+- Mongol; Maorí
+- Filipino Pilipino
+- Frisón occidental
+- Kurdo septentrional
+- Armenio
+- Feroés
+- Occitano (después de 1500)
+- quechua
+- Sindhi
+- Sundanés
+- Tártaro
+- Tonga (Islas Tonga)
+- Yoruba
+- OSD, PDF y ecuaciones
