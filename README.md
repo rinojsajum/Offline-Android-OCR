@@ -2,7 +2,6 @@
 
 <a href="https://hosted.weblate.org/projects/android-ocr" alt="Translate on Weblate"><img src="https://img.shields.io/badge/Translation-Weblate-red" ></a>
 
-OFFLINE OCR ANDROID 1
 
 An OCR app that can recognize texts on image.
 This App is based on <a href="https://github.com/tesseract-ocr/tesseract/blob/master/README.md">Tesseract 5 </a> and its is first app which is based on Tesseract 5. This app is made possible by a library [Tesseract4Android](https://github.com/adaptech-cz/Tesseract4Android).

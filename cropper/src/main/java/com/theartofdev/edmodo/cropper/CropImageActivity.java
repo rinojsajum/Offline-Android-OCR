@@ -138,7 +138,7 @@ public class CropImageActivity extends AppCompatActivity
         }
 
         if (!mOptions.allowFlipping) {
-            menu.removeItem(R.id.crop_image_menu_flip);
+//            menu.removeItem(R.id.crop_image_menu_flip);
         }
 
         if (mOptions.cropMenuCropButtonTitle != null) {
@@ -160,7 +160,7 @@ public class CropImageActivity extends AppCompatActivity
                     menu, R.id.crop_image_menu_rotate_left, mOptions.activityMenuIconColor);
             updateMenuItemIconColor(
                     menu, R.id.crop_image_menu_rotate_right, mOptions.activityMenuIconColor);
-            updateMenuItemIconColor(menu, R.id.crop_image_menu_flip, mOptions.activityMenuIconColor);
+//            updateMenuItemIconColor(menu, R.id.crop_image_menu_flip, mOptions.activityMenuIconColor);
             if (cropIcon != null) {
                 updateMenuItemIconColor(menu, R.id.crop_image_menu_crop, mOptions.activityMenuIconColor);
             }
@@ -182,14 +182,14 @@ public class CropImageActivity extends AppCompatActivity
             rotateImage(mOptions.rotationDegrees);
             return true;
         }
-        if (item.getItemId() == R.id.crop_image_menu_flip_horizontally) {
-            mCropImageView.flipImageHorizontally();
-            return true;
-        }
-        if (item.getItemId() == R.id.crop_image_menu_flip_vertically) {
-            mCropImageView.flipImageVertically();
-            return true;
-        }
+//        if (item.getItemId() == R.id.crop_image_menu_flip_horizontally) {
+//            mCropImageView.flipImageHorizontally();
+//            return true;
+//        }
+//        if (item.getItemId() == R.id.crop_image_menu_flip_vertically) {
+//            mCropImageView.flipImageVertically();
+//            return true;
+//        }
         if (item.getItemId() == android.R.id.home) {
             setResultCancel();
             return true;
