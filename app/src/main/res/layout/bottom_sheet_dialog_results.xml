@@ -13,22 +13,24 @@
          android:id="@+id/action_bar">
 
         <ImageButton
-             android:layout_height="match_parent"
-             android:layout_width="0dp"
-             android:contentDescription="@string/generic_image_description"
-             android:background="?attr/selectableItemBackgroundBorderless"
-             android:layout_weight="1"
-             app:srcCompat="@drawable/ic_baseline_copy_all_24"
-             android:id="@+id/btn_copy" />
+            android:id="@+id/btn_copy"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Copy"
+            app:srcCompat="@drawable/ic_baseline_copy_all_24" />
+
 
         <ImageButton
-             android:layout_height="match_parent"
-             android:layout_width="0dp"
-             android:contentDescription="@string/generic_image_description"
-             android:background="?attr/selectableItemBackgroundBorderless"
-             android:layout_weight="1"
-             app:srcCompat="@drawable/ic_baseline_share_24"
-             android:id="@+id/btn_share" />
+            android:id="@+id/btn_share"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Share"
+            app:srcCompat="@drawable/ic_baseline_share_24" />
+
 
     </LinearLayout>
 
