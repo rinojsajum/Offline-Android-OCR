@@ -1,5 +1,8 @@
 package io.github.subhamtyagi.ocr;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -7,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -14,11 +18,13 @@ import android.os.Looper;
 import android.provider.MediaStore;
 import android.text.Html;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -91,6 +97,16 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private Handler handler;
     private LinearProgressIndicator mProgressBar;
     private TextView mProgressMessage;
+
+    // --- ADDED FOR LOADING SCREEN ---
+    private AlertDialog loadingDialog;
+    private MediaPlayer mediaPlayer;
+    private ProgressBar loadingSpinner;
+    private LinearProgressIndicator dialogProgressBar;
+    private TextView loadingMessage;
+    private boolean isProgressBarVisibleInDialog = false;
+    // --- END ADDED FOR LOADING SCREEN ---
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -289,6 +305,8 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         return !new File(currentDirectory, String.format(Constants.LANGUAGE_CODE, language.getCode())).exists();
     }
 
+
+
     private void selectImage() {
         CropImage.activity().setGuidelines(CropImageView.Guidelines.ON).start(this);
     }
@@ -328,6 +346,21 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // --- ADDED FOR LOADING SCREEN ---
+        // Clean up media player and dialog to prevent memory leaks
+        if (mediaPlayer != null) {
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
+            }
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            loadingDialog.dismiss();
+        }
+        loadingDialog = null;
+        // --- END ADDED FOR LOADING SCREEN ---
+
         executorService.shutdownNow();
         if (dialog != null) {
             dialog.dismiss();
@@ -363,7 +396,25 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     @Override
     public void onProgressValues(final TessBaseAPI.ProgressValues progressValues) {
-        runOnUiThread(() -> mProgressIndicator.setProgress((int) (progressValues.getPercent() * 1.46)));
+        int progress = (int) (progressValues.getPercent() * 1.46);
+        runOnUiThread(() -> {
+            mProgressIndicator.setProgress(progress);
+
+            // --- ADDED FOR LOADING SCREEN ---
+            if (loadingDialog != null && loadingDialog.isShowing()) {
+                if (!isProgressBarVisibleInDialog) {
+                    // This is the first progress update, so switch from spinner to progress bar
+                    if (loadingSpinner != null) loadingSpinner.setVisibility(View.GONE);
+                    if (dialogProgressBar != null) dialogProgressBar.setVisibility(View.VISIBLE);
+                    if (loadingMessage != null) loadingMessage.setText("Recognizing text...");
+                    isProgressBarVisibleInDialog = true;
+                }
+                if (dialogProgressBar != null) {
+                    dialogProgressBar.setProgress(progress);
+                }
+            }
+            // --- END ADDED FOR LOADING SCREEN ---
+        });
     }
 
     public void saveBitmapToStorage(Bitmap bitmap) {
@@ -396,8 +447,114 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             BottomSheetResultsFragment bottomSheetResultsFragment = BottomSheetResultsFragment.newInstance(text);
             bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
         }
-
     }
+
+
+    // --- METHODS ADDED FOR LOADING SCREEN ---
+
+    /**
+     * Inflates and shows the loading dialog.
+     * Assumes a layout file R.layout.dialog_loading with specific view IDs.
+     */
+    private void showLoadingDialog() {
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            return;
+        }
+
+        isProgressBarVisibleInDialog = false; // Reset the progress bar flag
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_loading, null);
+
+        // Find views in the dialog layout. Ensure these IDs exist in your dialog_loading.xml
+        loadingSpinner = dialogView.findViewById(R.id.loading_spinner);
+        dialogProgressBar = dialogView.findViewById(R.id.loading_progress_bar);
+        loadingMessage = dialogView.findViewById(R.id.loading_message);
+
+        // Set initial state
+        if (loadingMessage != null) loadingMessage.setText("Processing image...");
+        if (loadingSpinner != null) loadingSpinner.setVisibility(View.VISIBLE);
+        if (dialogProgressBar != null) dialogProgressBar.setVisibility(View.GONE);
+
+
+        builder.setView(dialogView);
+        builder.setCancelable(false);
+
+        loadingDialog = builder.create();
+        loadingDialog.show();
+
+        playMusicWithFadeIn();
+    }
+
+    /**
+     * Starts playing music with a 1-second fade-in effect.
+     * Assumes a music file R.raw.loading_music exists.
+     */
+    private void playMusicWithFadeIn() {
+        try {
+            // IMPORTANT: Change R.raw.loading_music to your actual music file name.
+            mediaPlayer = MediaPlayer.create(this,R.raw.loading_music);
+            if (mediaPlayer == null) {
+                Log.e(TAG, "MediaPlayer creation failed. Is the raw file missing?");
+                return;
+            }
+            mediaPlayer.setLooping(true);
+            mediaPlayer.setVolume(0f, 0f); // Start with no volume
+
+            ValueAnimator fadeAnim = ValueAnimator.ofFloat(0f, 1f);
+            fadeAnim.setDuration(1000); // 1 second for fade-in
+            fadeAnim.addUpdateListener(animation -> {
+                if (mediaPlayer != null) {
+                    float volume = (Float) animation.getAnimatedValue();
+                    mediaPlayer.setVolume(volume, volume);
+                }
+            });
+            fadeAnim.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+                    if (mediaPlayer != null) {
+                        mediaPlayer.start();
+                    }
+                }
+            });
+            fadeAnim.start();
+        } catch (Exception e) {
+            Log.e(TAG, "Error playing music", e);
+        }
+    }
+
+    /**
+     * Stops the music and releases the MediaPlayer.
+     */
+    private void stopMusic() {
+        if (mediaPlayer != null) {
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
+            }
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+    }
+
+    /**
+     * Dismisses the loading dialog and stops the music.
+     */
+    private void dismissLoadingDialog() {
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            loadingDialog.dismiss();
+        }
+        loadingDialog = null;
+        // Nullify view references to avoid leaks
+        loadingSpinner = null;
+        dialogProgressBar = null;
+        loadingMessage = null;
+
+        stopMusic();
+    }
+
+    // --- END METHODS ADDED FOR LOADING SCREEN ---
+
 
     private class ConvertImageToText implements Runnable {
         private Bitmap bitmap;
@@ -410,6 +567,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         public void run() {
             // Pre-execute on UI thread
             handler.post(() -> {
+                // --- MODIFIED: Show loading screen ---
+                showLoadingDialog();
+                // --- END MODIFICATION ---
+
                 mProgressIndicator.setProgress(0);
                 mProgressIndicator.setVisibility(View.VISIBLE);
                 animateImageViewAlpha(0.2f);
@@ -425,6 +586,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
             // Post-execution on UI thread
             handler.post(() -> {
+                // --- MODIFIED: Dismiss loading screen ---
+                dismissLoadingDialog();
+                // --- END MODIFICATION ---
+
                 mProgressIndicator.setVisibility(View.GONE);
                 animateImageViewAlpha(1f);
                 String cleanText = Html.fromHtml(text).toString().trim();
