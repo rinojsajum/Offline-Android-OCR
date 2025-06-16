@@ -92,16 +92,34 @@
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/btn_scan"
+        <!-- FAB group: Camera | PDF | Gallery -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
-            android:layout_margin="16dp"
-            android:clickable="true"
-            android:contentDescription="@string/generic_image_description"
-            android:focusable="true"
-            app:srcCompat="@drawable/ic_baseline_photo_library_24" />
+            android:orientation="horizontal"
+            android:layout_margin="16dp">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btn_pdf"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:contentDescription="PDF"
+                app:srcCompat="@drawable/ic_pdf" />
+
+
+
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btn_scan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Gallery"
+                app:srcCompat="@drawable/ic_baseline_photo_library_24" />
+        </LinearLayout>
 
     </FrameLayout>
 

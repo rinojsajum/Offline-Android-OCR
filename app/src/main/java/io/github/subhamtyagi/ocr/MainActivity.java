@@ -4,13 +4,24 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.pdf.PdfRenderer;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.graphics.Paint;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
+
+
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.ParcelFileDescriptor;
+
 import android.provider.MediaStore;
 import android.text.Html;
 import android.util.Log;
@@ -28,6 +39,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Lifecycle;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.annotation.RequiresApi;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -92,6 +104,8 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private LinearProgressIndicator mProgressBar;
     private TextView mProgressMessage;
 
+    private static final int REQUEST_CODE_PICK_PDF = 1001;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -118,7 +132,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     }
 
     private void initViews() {
-
         mFloatingActionButton.setOnClickListener(v -> {
             if (isNoLanguagesDataMissingFromSet()) {
                 if (mImageTextReader != null) {
@@ -129,8 +142,12 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             } else {
                 downloadLanguageData();
             }
-
         });
+
+        // PDF button click listener
+        FloatingActionButton pdfButton = findViewById(R.id.btn_pdf);
+        pdfButton.setOnClickListener(v -> openPdfPicker());
+
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             if (isNoLanguagesDataMissingFromSet()) {
                 if (mImageTextReader != null) {
@@ -149,8 +166,8 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 downloadLanguageData();
             }
             mSwipeRefreshLayout.setRefreshing(false);
-
         });
+
         if (Utils.isPersistData()) {
             Bitmap bitmap = loadBitmapFromStorage();
             if (bitmap != null) {
@@ -162,7 +179,17 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     @Override
     protected void onResume() {
         super.onResume();
-        mLanguageName.setText(Utils.getTrainingDataLanguages(this).stream().map(Language::getName).collect(Collectors.joining(", ")));
+        mLanguageName.setText(Utils.getTrainingDataLanguages(this)
+                .stream()
+                .map(Language::getName)
+                .collect(Collectors.joining(", ")));
+    }
+
+    private void openPdfPicker() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("application/pdf");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(Intent.createChooser(intent, "Select PDF"), REQUEST_CODE_PICK_PDF);
     }
 
     private void initDirectories() {
@@ -183,15 +210,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 }
             }
         }
-        // Set currentDirectory to the last initialized directory (standard)
         currentDirectory = new File(dirStandard, "tessdata");
     }
 
-
-    /**
-     * initialize the OCR i.e tesseract api
-     * if there is no training data in directory than it will ask for download
-     */
     private void initializeOCR() {
         Set<Language> languages = Utils.getTrainingDataLanguages(this);
         File cf;
@@ -211,7 +232,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             default:
                 cf = dirFast;
                 currentDirectory = new File(dirFast, "tessdata");
-
         }
 
         if (isNoLanguagesDataMissingFromSet()) {
@@ -227,7 +247,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 if (mImageTextReader != null) {
                     mImageTextReader.tearDownEverything();
                 }
-                mImageTextReader = ImageTextReader.getInstance(cf.getAbsolutePath(), languages, mPageSegMode, parameters, Utils.isExtraParameterSet(), MainActivity.this);
+                mImageTextReader = ImageTextReader.getInstance(
+                        cf.getAbsolutePath(), languages,
+                        mPageSegMode, parameters,
+                        Utils.isExtraParameterSet(), MainActivity.this);
                 if (mImageTextReader != null && !mImageTextReader.isSuccess()) {
                     handleReaderException(languages);
                 }
@@ -257,12 +280,17 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         }
         String missingLangName = missingLanguage.stream().map(Language::getName).collect(Collectors.joining(", "));
         String msg = String.format(getString(R.string.download_description), missingLangName);
-        dialog = new AlertDialog.Builder(this).setTitle(R.string.training_data_missing).setCancelable(false).setMessage(msg).setPositiveButton(R.string.yes, (dialog, which) -> {
-            dialog.cancel();
-            executorService.submit(new DownloadTraining(mTrainingDataType, missingLanguage));
-        }).setNegativeButton(R.string.no, (dialog, which) -> dialog.cancel()).create();
+        dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.training_data_missing)
+                .setCancelable(false)
+                .setMessage(msg)
+                .setPositiveButton(R.string.yes, (dialog, which) -> {
+                    dialog.cancel();
+                    executorService.submit(new DownloadTraining(mTrainingDataType, missingLanguage));
+                })
+                .setNegativeButton(R.string.no, (dialog, which) -> dialog.cancel())
+                .create();
         dialog.show();
-
     }
 
     private boolean isNoLanguagesDataMissingFromSet() {
@@ -274,7 +302,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         return true;
     }
 
-    private boolean isLanguageDataMissing(final @NonNull String dataType, final @NonNull Language language) {
+    private boolean isLanguageDataMissing(@NonNull String dataType, @NonNull Language language) {
         switch (dataType) {
             case "best":
                 currentDirectory = new File(dirBest, "tessdata");
@@ -284,7 +312,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 break;
             default:
                 currentDirectory = new File(dirFast, "tessdata");
-
         }
         return !new File(currentDirectory, String.format(Constants.LANGUAGE_CODE, language.getCode())).exists();
     }
@@ -307,9 +334,11 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == REQUEST_CODE_SETTINGS) {
             initializeOCR();
         }
+
         if (resultCode == RESULT_OK) {
             if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
                 if (isNoLanguagesDataMissingFromSet()) {
@@ -320,10 +349,91 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 } else {
                     initializeOCR();
                 }
+            }
 
+            if (requestCode == REQUEST_CODE_PICK_PDF && data != null) {
+                Uri pdfUri = data.getData();
+                if (pdfUri != null) {
+                    processPdf(pdfUri);
+                }
             }
         }
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void processPdf(Uri uri) {
+        executorService.execute(() -> {
+            try (ParcelFileDescriptor fileDescriptor = getContentResolver().openFileDescriptor(uri, "r");
+                 PdfRenderer renderer = new PdfRenderer(fileDescriptor)) {
+
+                int pageCount = renderer.getPageCount();
+                StringBuilder fullText = new StringBuilder();
+
+                runOnUiThread(() -> {
+                    mProgressBar.setMax(pageCount);
+                    mProgressBar.setProgress(0);
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    mProgressMessage.setText("Processing PDF...");
+                });
+
+                for (int i = 0; i < pageCount; i++) {
+                    PdfRenderer.Page page = renderer.openPage(i);
+
+                    // Set high-resolution rendering
+                    int width = page.getWidth() * 2;   // 2x scaling
+                    int height = page.getHeight() * 2;
+
+                    Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                    Rect rect = new Rect(0, 0, width, height);
+                    page.render(bitmap, rect, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                    bitmap = toGrayscale(bitmap);
+                    page.close();
+
+                    String result = mImageTextReader.getTextFromBitmap(bitmap); // Use existing getTextFromBitmap()
+                    fullText.append("Page ").append(i + 1).append(":\n").append(result).append("\n\n");
+
+                    final int progress = i + 1;
+                    runOnUiThread(() -> mProgressBar.setProgress(progress));
+                }
+
+                runOnUiThread(() -> {
+                    mProgressMessage.setText("OCR Complete!");
+                    mProgressBar.setVisibility(View.GONE);
+                    showResultDialog(fullText.toString());
+                });
+
+            } catch (IOException e) {
+                Log.e(TAG, "Error processing PDF: ", e);
+                runOnUiThread(() -> Toast.makeText(this, "Failed to read PDF.", Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private Bitmap toGrayscale(Bitmap bmpOriginal) {
+        int width, height;
+        height = bmpOriginal.getHeight();
+        width = bmpOriginal.getWidth();
+
+        Bitmap bmpGrayscale = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bmpGrayscale);
+        Paint paint = new Paint();
+        ColorMatrix colorMatrix = new ColorMatrix();
+        colorMatrix.setSaturation(0);  // Remove color (convert to grayscale)
+        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(colorMatrix);
+        paint.setColorFilter(filter);
+        canvas.drawBitmap(bmpOriginal, 0, 0, paint);
+        return bmpGrayscale;
+    }
+
+    private void showResultDialog(String text) {
+        new AlertDialog.Builder(this)
+                .setTitle("OCR Result")
+                .setMessage(text)
+                .setPositiveButton("OK", null)
+                .setCancelable(true)
+                .show();
+    }
+
 
     @Override
     protected void onDestroy() {

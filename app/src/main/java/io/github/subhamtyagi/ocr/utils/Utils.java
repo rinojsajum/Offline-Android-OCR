@@ -187,4 +187,7 @@ public class Utils {
             return nwInfo != null && nwInfo.isConnected();
         }
     }
+
+
+
 }
