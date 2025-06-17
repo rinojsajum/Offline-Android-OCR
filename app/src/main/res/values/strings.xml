@@ -75,4 +75,7 @@
     <string name="select_search_language">Select or Search Languages</string>
     <string name="learn_about_the_above_parameters">Learn more about the parameters</string>
     <string name="about_the_tesseract_parameters">Learn more</string>
+    <string name="processing_image">Processing image</string>
+    <string name="processing_completed">Processing completed</string>
+    <string name="recognizing_text">Recognizing text</string>
 </resources>
