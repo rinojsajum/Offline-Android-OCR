@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp">
+
+    <!--
+    This FrameLayout holds both the initial spinner and the
+    progress bar that appears later. We stack them on top of
+    each other and toggle their visibility in the Java code.
+    -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!--
+        The initial spinner shown during preprocessing.
+        ID MUST be "loading_spinner" to match the Java code.
+        -->
+        <ProgressBar
+            android:id="@+id/loading_spinner"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true" />
+
+        <!--
+        The determinate progress bar shown during OCR.
+        ID MUST be "loading_progress_bar" to match the Java code.
+        It is hidden by default and made visible later.
+        -->
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/loading_progress_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:indeterminate="false"
+            app:indicatorColor="?attr/colorPrimary"
+            app:trackColor="?attr/colorPrimaryContainer"
+            app:trackCornerRadius="8dp"/>
+
+    </FrameLayout>
+
+    <!--
+    The text message below the progress indicators.
+    ID MUST be "loading_message" to match the Java code.
+    -->
+    <TextView
+        android:id="@+id/loading_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Processing image..."
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+</LinearLayout>

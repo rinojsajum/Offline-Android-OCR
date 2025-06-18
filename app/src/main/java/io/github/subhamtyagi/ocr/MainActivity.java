@@ -1,12 +1,15 @@
 package io.github.subhamtyagi.ocr;
 
+import android.animation.Animator; // From other person's version
+import android.animation.AnimatorListenerAdapter; // From other person's version
+import android.animation.ValueAnimator; // From other person's version (though not directly used, kept for completeness)
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color; // Explicitly added as it's used in preprocessBitmap
+import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
@@ -25,11 +28,13 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.text.Html;
 import android.util.Log;
+import android.view.LayoutInflater; // From other person's version
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar; // From other person's version
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,8 +56,7 @@ import com.canhub.cropper.CropImageContract;
 import com.canhub.cropper.CropImageContractOptions;
 import com.canhub.cropper.CropImageOptions;
 import com.canhub.cropper.CropImageView;
-// Note: com.theartofdev.edmodo.cropper.CropImage and CropImageView are removed,
-// replaced by com.canhub.cropper equivalents for consistency with ActivityResultLauncher.
+// The old com.theartofdev.edmodo.cropper imports are explicitly removed to use canhub.cropper consistently.
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -79,7 +83,6 @@ import io.github.subhamtyagi.ocr.utils.Language;
 import io.github.subhamtyagi.ocr.utils.SpUtil;
 import io.github.subhamtyagi.ocr.utils.Utils;
 
-
 public class MainActivity extends AppCompatActivity implements TessBaseAPI.ProgressNotifier {
 
     public static final String TAG = "MainActivity";
@@ -87,9 +90,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private static boolean isRefresh = false;
 
     private String pendingTextToSave = null;
-    // REQUEST_CODE_PICK_PDF is no longer strictly needed as pickPdfLauncher handles it,
-    // but its value is retained for historical context/if an old intent call still existed somewhere.
-    private static final int REQUEST_CODE_PICK_PDF = 1001;
+    private static final int REQUEST_CODE_PICK_PDF = 1001; // Retained value for consistency
 
     private File dirBest;
     private File dirStandard;
@@ -105,15 +106,15 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     /**
      * AlertDialog for showing when language data doesn't exists
      */
-    private AlertDialog dialog;
+    private AlertDialog dialog; // For language download prompt
     private ImageView mImageView;
-    private LinearProgressIndicator mProgressIndicator;
+    private LinearProgressIndicator mProgressIndicator; // Main activity progress bar
     private SwipeRefreshLayout mSwipeRefreshLayout;
 
     // Unified FAB declarations for clarity and consistency
-    private FloatingActionButton mGalleryFab; // Handles image picking (formerly btn_scan / btn_media_picker)
-    private FloatingActionButton mPdfFab;     // Handles PDF picking (formerly btn_pdf)
-    private FloatingActionButton mSavedFilesFab; // Handles opening saved files (from development2)
+    private FloatingActionButton mGalleryFab;    // Handles image picking (btn_scan)
+    private FloatingActionButton mPdfFab;        // Handles PDF picking (btn_pdf)
+    private FloatingActionButton mSavedFilesFab; // Handles opening saved files (btn_saved_files)
 
     private LinearLayout mDownloadLayout;
     /**
@@ -122,10 +123,24 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private TextView mLanguageName;
     private ExecutorService executorService;
     private Handler handler;
-    private LinearProgressIndicator mProgressBar;
+    private LinearProgressIndicator mProgressBar; // Progress bar for language downloads
     private TextView mProgressMessage;
 
-    // ActivityResultLaunchers for modern AndroidX approach (from development2, adapted for server's PDF)
+    // --- NEW / MODIFIED FOR ACCESSIBILITY AND LOADING DIALOG ---
+    private AlertDialog loadingDialog;
+    private ProgressBar loadingSpinner; // Standard indeterminate spinner
+    private LinearProgressIndicator dialogProgressBar; // Determinate progress bar inside dialog
+    private TextView loadingMessage;
+    private boolean isProgressBarVisibleInDialog = false; // Flag to track which progress bar is visible in dialog
+
+    // Accessibility Announcer fields
+    private Handler accessibilityHandler;
+    private Runnable accessibilityRunnable;
+    private volatile String currentAccessibilityMessage;
+    // --- END NEW / MODIFIED ---
+
+
+    // ActivityResultLaunchers for modern AndroidX approach
     private ActivityResultLauncher<CropImageContractOptions> cropImageLauncher;
     private ActivityResultLauncher<Intent> createDocumentLauncher;
     private ActivityResultLauncher<Intent> pickPdfLauncher;
@@ -139,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
         SpUtil.getInstance().init(this);
 
-        // Initialize ActivityResultLauncher for image cropping (from development2)
+        // Initialize ActivityResultLauncher for image cropping
         cropImageLauncher = registerForActivityResult(new CropImageContract(), result -> {
             if (result.isSuccessful()) {
                 Uri imageUri = result.getUriContent();
@@ -156,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             }
         });
 
-        // Initialize ActivityResultLauncher for SAF text saving (from development2)
+        // Initialize ActivityResultLauncher for SAF text saving
         createDocumentLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                 Uri uri = result.getData().getData();
@@ -174,12 +189,11 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             }
         });
 
-        // Initialize ActivityResultLauncher for PDF picking (unified from both branches)
+        // Initialize ActivityResultLauncher for PDF picking
         pickPdfLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                 Uri pdfUri = result.getData().getData();
                 if (pdfUri != null) {
-                    // Check Android version as PdfRenderer requires LOLLIPOP (API 21)
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
                         processPdf(pdfUri);
                     } else {
@@ -201,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         mImageView = findViewById(R.id.source_image);
         mProgressIndicator = findViewById(R.id.progress_indicator);
         mSwipeRefreshLayout = findViewById(R.id.swipe_to_refresh);
-        mGalleryFab = findViewById(R.id.btn_scan); // Corresponds to btn_scan in your version, or btn_media_picker in server
+        mGalleryFab = findViewById(R.id.btn_scan); // Corresponds to btn_scan
         mLanguageName = findViewById(R.id.language_name1);
 
         mProgressBar = findViewById(R.id.progress_bar);
@@ -213,6 +227,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
         executorService = Executors.newFixedThreadPool(1);
         handler = new Handler(Looper.getMainLooper());
+
+        // --- NEW ---
+        initAccessibilityAnnouncer(); // Initialize accessibility announcer
+        // --- END NEW ---
 
         initDirectories();
         initializeOCR();
@@ -228,7 +246,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 Log.d(TAG, "Gallery FAB clicked. Opening image selection.");
                 if (isNoLanguagesDataMissingFromSet()) {
                     if (mImageTextReader != null) {
-                        selectImage(); // Now uses ActivityResultLauncher
+                        selectImage(); // Uses ActivityResultLauncher
                     } else {
                         initializeOCR();
                     }
@@ -240,19 +258,17 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             Log.e(TAG, "Gallery FAB (btn_scan) not found in layout!");
         }
 
-
         // Listener for the 'PDF' button
         if (mPdfFab != null) {
             mPdfFab.setOnClickListener(v -> {
                 Log.d(TAG, "PDF FAB clicked. Opening PDF picker.");
-                openPdfPicker(); // Now uses ActivityResultLauncher
+                openPdfPicker(); // Uses ActivityResultLauncher
             });
         } else {
             Log.e(TAG, "PDF FAB (btn_pdf) not found in layout!");
         }
 
-
-        // Listener for the 'Saved Files' button (from development2)
+        // Listener for the 'Saved Files' button
         if (mSavedFilesFab != null) {
             mSavedFilesFab.setOnClickListener(v -> {
                 Log.d(TAG, "Saved Files FAB clicked. Opening SavedResultsActivity.");
@@ -262,14 +278,13 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             Log.e(TAG, "Saved Files FAB (btn_saved_files) not found in layout!");
         }
 
-
         // SwipeRefreshLayout listener
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             Log.d(TAG, "SwipeRefreshLayout triggered.");
             if (isNoLanguagesDataMissingFromSet()) {
                 if (mImageTextReader != null) {
                     Drawable drawable = mImageView.getDrawable();
-                    if (drawable instanceof BitmapDrawable) { // Added type check for safety
+                    if (drawable instanceof BitmapDrawable) {
                         Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
                         if (bitmap != null) {
                             isRefresh = true;
@@ -307,7 +322,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     @Override
     protected void onResume() {
         super.onResume();
-        // Ensure languages is not null before streaming
         Set<Language> languages = Utils.getTrainingDataLanguages(this);
         if (languages == null) {
             languages = new HashSet<>();
@@ -349,7 +363,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 Log.e(TAG, "Failed to create directory: " + dir.getAbsolutePath());
             }
         }
-        // Consolidated logic: set to standard initially, then updated in initializeOCR based on settings
         currentDirectory = new File(dirStandard, "tessdata");
         Log.d(TAG, "Current Tesseract data directory set to: " + currentDirectory.getAbsolutePath());
     }
@@ -407,8 +420,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                         mPageSegMode, parameters,
                         Utils.isExtraParameterSet(), MainActivity.this);
                 if (mImageTextReader != null && !mImageTextReader.isSuccess()) {
-                    // Post to UI thread for Toast compatibility
-                    handler.post(() -> handleReaderException(languages));
+                    handler.post(() -> handleReaderException(languages)); // Run on UI thread for Toast compatibility
                     Log.e(TAG, "ImageTextReader initialization failed (not success).");
                 } else if (mImageTextReader == null) {
                     Log.e(TAG, "ImageTextReader instance is null after getInstance.");
@@ -417,14 +429,12 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Exception during ImageTextReader initialization: " + e.getLocalizedMessage(), e);
-                // Post to UI thread for Toast compatibility
-                handler.post(() -> handleReaderException(languages));
+                handler.post(() -> handleReaderException(languages)); // Run on UI thread for Toast compatibility
             }
         }).start();
     }
 
     private void handleReaderException(Set<Language> languages) {
-        // Generate a single language code string for the set for file name, if needed for deletion
         String langCode = languages.stream().map(Language::getCode).collect(Collectors.joining("+"));
         File destFile = new File(currentDirectory, String.format(Constants.LANGUAGE_CODE, langCode));
 
@@ -447,7 +457,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         Log.d(TAG, "downloadLanguageData: Checking for missing language data and prompting download.");
         Set<Language> missingLanguage = new HashSet<>();
         Set<Language> languages = Utils.getTrainingDataLanguages(this);
-        if (languages == null) { // Ensure languages is not null
+        if (languages == null) {
             languages = new HashSet<>();
         }
 
@@ -461,7 +471,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 missingLanguage.add(l);
             }
         }
-        // If no language data is actually missing after checking, proceed to initialize OCR
         if (missingLanguage.isEmpty()) {
             Log.d(TAG, "No language data is actually missing, initializing OCR.");
             initializeOCR();
@@ -504,7 +513,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     }
 
     private boolean isLanguageDataMissing(@NonNull String dataType, @NonNull Language language) {
-        // Redetermine currentDirectory based on dataType for each check to ensure correctness
         File checkDirectory;
         switch (dataType) {
             case "best":
@@ -554,8 +562,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         }
     }
 
-    // This onActivityResult is now simplified, as most intent results are handled by ActivityResultLaunchers.
-    // It only handles REQUEST_CODE_SETTINGS and error logging for old CropImage result codes.
+    // onActivityResult is simplified as most intent results are handled by ActivityResultLaunchers.
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -565,12 +572,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             Log.d(TAG, "ActivityResult from settings, re-initializing OCR.");
             initializeOCR();
         }
-        // If an old CropImage call somehow still triggers this, handle its error
-        // Note: The correct constant for errors from the canhub cropper is typically just `RESULT_CANCELED` for user cancellation,
-        // or a specific error object in the `ActivityResult` for actual errors.
+        // If an old CropImage call somehow still triggers this, handle its error.
         // The constant `CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE` is from the old library.
-        // Keeping it for backward compatibility/defensive coding, but modern usage relies on the launcher's result.
-        if (resultCode == com.theartofdev.edmodo.cropper.CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) { // Retained old constant for defensive coding
+        if (resultCode == com.theartofdev.edmodo.cropper.CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
             com.theartofdev.edmodo.cropper.CropImage.ActivityResult result = com.theartofdev.edmodo.cropper.CropImage.getActivityResult(data);
             if (result != null && result.getError() != null) {
                 Log.e(TAG, "Old CropImage error detected: " + result.getError().getMessage());
@@ -583,14 +587,22 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     protected void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy: Activity destroyed.");
+
+        // Clean up accessibility announcer and loading dialog
+        stopAccessibilityAnnouncements();
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            loadingDialog.dismiss();
+        }
+        loadingDialog = null;
+
         if (executorService != null) {
             executorService.shutdownNow();
             Log.d(TAG, "ExecutorService shut down.");
         }
-        if (dialog != null) {
+        if (dialog != null) { // For language download dialog
             dialog.dismiss();
             dialog = null;
-            Log.d(TAG, "AlertDialog dismissed.");
+            Log.d(TAG, "Language download AlertDialog dismissed.");
         }
         if (mImageTextReader != null) {
             mImageTextReader.tearDownEverything();
@@ -618,7 +630,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_settings) {
-            // Using startActivityForResult directly here for consistency with its definition
             startActivityForResult(new Intent(this, SettingsActivity.class), REQUEST_CODE_SETTINGS);
             Log.d(TAG, "Options menu: Settings selected, launching SettingsActivity.");
         } else if (id == R.id.action_history) {
@@ -630,11 +641,28 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     @Override
     public void onProgressValues(final TessBaseAPI.ProgressValues progressValues) {
+        int progress = (int) (progressValues.getPercent() * 1.46); // Multiplier from your version
         runOnUiThread(() -> {
-            int progress = (int) (progressValues.getPercent() * 1.46);
-            mProgressIndicator.setProgress(progress);
-            // Log this less frequently or only at key intervals if it's too chatty
-            // Log.v(TAG, "OCR Progress: " + progressValues.getPercent() + "%, UI Progress: " + progress + "%");
+            mProgressIndicator.setProgress(progress); // Update main activity progress bar
+
+            // --- MODIFIED FOR ACCESSIBILITY / LOADING DIALOG ---
+            if (loadingDialog != null && loadingDialog.isShowing()) {
+                if (!isProgressBarVisibleInDialog) {
+                    if (loadingSpinner != null) loadingSpinner.setVisibility(View.GONE);
+                    if (dialogProgressBar != null) dialogProgressBar.setVisibility(View.VISIBLE);
+                    if (loadingMessage != null) {
+                        loadingMessage.setText(getString(R.string.recognizing_text)); // Using string resource from other person's layout assumptions
+                        currentAccessibilityMessage = getString(R.string.recognizing_text); // Update message for announcer
+                    }
+                    isProgressBarVisibleInDialog = true;
+                }
+                if (dialogProgressBar != null) {
+                    dialogProgressBar.setProgress(progress);
+                }
+            }
+            // --- END MODIFICATION ---
+
+            // Log.v(TAG, "OCR Progress: " + progressValues.getPercent() + "%, UI Progress: " + progress + "%"); // Optional verbose logging
         });
     }
 
@@ -647,7 +675,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             fileOutputStream.close();
             Log.d(TAG, "Bitmap saved to last_file.jpeg successfully.");
         } catch (IOException e) {
-            Log.e(TAG, "saveBitmapToStorage: Failed to save bitmap: " + e.getLocalizedMessage(), e);
+            Log.e(TAG, "saveBitmapToStorage: Failed to save bitmap: " + e.getLocalizedMessage(), e); // Changed TAG and improved logging
         }
     }
 
@@ -680,6 +708,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     /**
      * Displays a dialog asking the user to save the extracted text to a public location (SAF).
+     * (From previous merge)
      *
      * @param extractedText The text to be saved.
      */
@@ -698,8 +727,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                     intent.setType("text/plain");
                     intent.putExtra(Intent.EXTRA_TITLE, suggestedFileName);
 
-                    // Attempt to suggest the Documents root, adapted for modern Android.
-                    // This is a hint, and not all file managers will respect it exactly.
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                         Uri initialUri = Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments");
                         intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, initialUri);
@@ -716,6 +743,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     /**
      * Writes the given text to the specified URI using Storage Access Framework.
+     * (From previous merge)
      *
      * @param uri        The URI of the document to write to.
      * @param textToSave The text content to write.
@@ -742,6 +770,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     /**
      * Opens the SavedResultsActivity to view previously saved OCR results.
+     * (From previous merge)
      */
     private void openSavedFilesFolder() {
         startActivity(new Intent(MainActivity.this, SavedResultsActivity.class));
@@ -750,6 +779,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     /**
      * Processes a selected PDF URI, rendering pages to bitmaps and performing OCR.
      * Requires Android 5.0 (Lollipop) or higher.
+     * (From previous merge)
      *
      * @param uri The URI of the PDF file.
      */
@@ -780,25 +810,19 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                         page = renderer.openPage(i);
                         Log.d(TAG, "Opened PDF page: " + (i + 1));
 
-                        // Target DPI for OCR
-                        float targetDpi = 300f; // Aim for 300 DPI for better OCR
-
-                        // Calculate width and height based on target DPI.
-                        // PDF page dimensions are typically in points (72 points per inch).
+                        float targetDpi = 300f;
                         int width = (int) (page.getWidth() / 72f * targetDpi);
                         int height = (int) (page.getHeight() / 72f * targetDpi);
 
                         originalBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                        // The rect should match the dimensions of the new, higher resolution bitmap
                         Rect rect = new Rect(0, 0, width, height);
                         page.render(originalBitmap, rect, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
                         Log.i(TAG, "Page " + (i + 1) + " successfully rendered to originalBitmap. Dimensions: " + originalBitmap.getWidth() + "x" + originalBitmap.getHeight());
 
-                        // Preprocess the bitmap (grayscale and binarization)
-                        processedBitmap = preprocessBitmap(originalBitmap); // Using the local preprocessBitmap for consistency with server's PDF logic
+                        // Using the local preprocessBitmap for consistency with previous PDF logic
+                        processedBitmap = preprocessBitmap(originalBitmap);
                         Log.d(TAG, "Page " + (i + 1) + " preprocessed.");
 
-                        // Perform OCR on the processed bitmap
                         if (mImageTextReader != null) {
                             String result = mImageTextReader.getTextFromBitmap(processedBitmap);
                             fullText.append("--- Page ").append(i + 1).append(" ---\n").append(result).append("\n\n");
@@ -807,7 +831,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                             Log.e(TAG, "ImageTextReader is not initialized for PDF OCR on Page " + (i + 1) + ". Skipping OCR for this page.");
                             fullText.append("--- Page ").append(i + 1).append(" ---\nOCR failed: ImageTextReader not ready.\n\n");
                         }
-                    } finally { // Ensures resources are released even if an error occurs
+                    } finally {
                         if (processedBitmap != null && !processedBitmap.isRecycled()) {
                             processedBitmap.recycle();
                             Log.d(TAG, "Processed bitmap for page " + (i + 1) + " recycled.");
@@ -833,7 +857,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                     mProgressMessage.setText("OCR Complete!");
                     mProgressBar.setVisibility(View.GONE);
                     Log.d(TAG, "UI: OCR processing finished, progress bar hidden.");
-                    // Show the combined OCR result for all pages
                     showResultDialog(fullText.toString());
                     Log.d(TAG, "OCR Result dialog shown.");
                 });
@@ -841,7 +864,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             } catch (IOException e) {
                 Log.e(TAG, "Error processing PDF: " + e.getLocalizedMessage(), e);
                 handler.post(() -> Toast.makeText(this, "Failed to read PDF. Error: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show());
-            } catch (Exception e) { // Catch any other unexpected exceptions during PDF processing or OCR
+            } catch (Exception e) {
                 Log.e(TAG, "Unexpected error during PDF processing or OCR: " + e.getLocalizedMessage(), e);
                 handler.post(() -> Toast.makeText(this, "An unexpected error occurred during PDF processing.", Toast.LENGTH_LONG).show());
             }
@@ -850,7 +873,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     /**
      * Converts a given bitmap to grayscale and then binarizes it.
-     * This method is retained from the server's PDF processing logic.
+     * This method is retained for PDF processing. For general image processing, Utils.preProcessBitmap is used.
      *
      * @param bmpOriginal The original color bitmap.
      * @return The preprocessed (grayscale and binarized) version of the bitmap.
@@ -882,7 +905,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 int pixel = pixels[y * width + x];
-                int gray = Color.red(pixel); // Get grayscale value
+                int gray = Color.red(pixel);
 
                 if (gray < threshold) {
                     pixels[y * width + x] = Color.BLACK;
@@ -905,6 +928,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     /**
      * Displays a basic AlertDialog with the OCR result.
+     * (From previous merge)
      *
      * @param text The OCR extracted text to display.
      */
@@ -918,7 +942,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 .show();
     }
 
-    // Helper method to save bitmaps for debugging (from server version) - not currently called in flow, but useful
+    // Helper method to save bitmaps for debugging (from previous merge)
     private void saveBitmapToFile(Context context, Bitmap bitmap, String filename) {
         Log.d(TAG, "saveBitmapToFile called for: " + filename);
         if (bitmap == null || bitmap.isRecycled()) {
@@ -943,9 +967,122 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         }
     }
 
+    // =========================================================================================
+    // === NEW ACCESSIBILITY ANNOUNCER METHODS (from other person's version) ===================
+    // =========================================================================================
+
+    /**
+     * Initializes the handler and runnable for repeated accessibility announcements.
+     */
+    private void initAccessibilityAnnouncer() {
+        accessibilityHandler = new Handler(Looper.getMainLooper());
+        accessibilityRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Announce the message only if the dialog is still showing
+                if (loadingDialog != null && loadingDialog.isShowing() && loadingMessage != null) {
+                    loadingMessage.announceForAccessibility(currentAccessibilityMessage);
+                    // Schedule the next announcement in 2.5 seconds
+                    accessibilityHandler.postDelayed(this, 2500);
+                }
+            }
+        };
+    }
+
+    /**
+     * Starts the periodic accessibility announcements.
+     * @param initialMessage The first message to be announced repeatedly.
+     */
+    private void startAccessibilityAnnouncements(String initialMessage) {
+        currentAccessibilityMessage = initialMessage;
+        // Remove any pending announcements and start a new cycle immediately.
+        if (accessibilityHandler != null) {
+            accessibilityHandler.removeCallbacks(accessibilityRunnable);
+            accessibilityHandler.post(accessibilityRunnable);
+        }
+    }
+
+    /**
+     * Stops the periodic accessibility announcements.
+     */
+    private void stopAccessibilityAnnouncements() {
+        if (accessibilityHandler != null) {
+            accessibilityHandler.removeCallbacks(accessibilityRunnable);
+        }
+    }
+
+    // =========================================================================================
+    // === LOADING DIALOG METHODS (MODIFIED FOR ACCESSIBILITY, from other person's version) ====
+    // =========================================================================================
+
+    private void showLoadingDialog() {
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            return;
+        }
+
+        isProgressBarVisibleInDialog = false;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_loading, null); // Assumes dialog_loading.xml exists
+
+        loadingSpinner = dialogView.findViewById(R.id.loading_spinner);
+        dialogProgressBar = dialogView.findViewById(R.id.loading_progress_bar);
+        loadingMessage = dialogView.findViewById(R.id.loading_message);
+
+        // Accessibility fix: Silence progress indicators
+        if (loadingSpinner != null) {
+            loadingSpinner.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        }
+        if (dialogProgressBar != null) {
+            dialogProgressBar.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        }
+
+        String initialMessage = getString(R.string.processing_image); // Assumes R.string.processing_image exists
+        if (loadingMessage != null) loadingMessage.setText(initialMessage);
+        if (loadingSpinner != null) loadingSpinner.setVisibility(View.VISIBLE);
+        if (dialogProgressBar != null) dialogProgressBar.setVisibility(View.GONE);
+
+        builder.setView(dialogView);
+        builder.setCancelable(false);
+
+        loadingDialog = builder.create();
+        loadingDialog.show();
+
+        // Start repeating the "Processing image" announcement.
+        startAccessibilityAnnouncements(initialMessage);
+    }
+
+    /**
+     * Dismisses the loading dialog and makes a final announcement.
+     * @param finalAnnouncement The message to announce once upon completion.
+     */
+    private void dismissLoadingDialog(@Nullable String finalAnnouncement) {
+        // Stop the repeating announcements immediately.
+        stopAccessibilityAnnouncements();
+
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            // Announce the final message if provided. This will interrupt any previous speech.
+            if (finalAnnouncement != null && loadingMessage != null) {
+                loadingMessage.announceForAccessibility(finalAnnouncement);
+            }
+            loadingDialog.dismiss();
+        }
+
+        loadingDialog = null;
+        loadingSpinner = null;
+        dialogProgressBar = null;
+        loadingMessage = null;
+    }
+
+    // =========================================================================================
+    // === END OF NEW/MODIFIED METHODS =========================================================
+    // =========================================================================================
+
 
     private class ConvertImageToText implements Runnable {
-        private Bitmap bitmap;
+        // Changed to final as it's passed in constructor and not reassigned.
+        private final Bitmap bitmap;
 
         public ConvertImageToText(Bitmap bitmap) {
             this.bitmap = bitmap;
@@ -957,6 +1094,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             Log.d(TAG, "ConvertImageToText: Running OCR task in background.");
             // Pre-execute on UI thread
             handler.post(() -> {
+                showLoadingDialog(); // Call the new loading dialog
                 mProgressIndicator.setProgress(0);
                 mProgressIndicator.setVisibility(View.VISIBLE);
                 animateImageViewAlpha(0.2f);
@@ -966,7 +1104,8 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             // Background execution
             if (!isRefresh && Utils.isPreProcessImage()) {
                 Log.d(TAG, "Applying pre-processing to image.");
-                bitmap = Utils.preProcessBitmap(bitmap); // Using Utils for general image preprocessing
+                // Ensure assignment here, as Utils.preProcessBitmap returns a new bitmap.
+                bitmap = Utils.preProcessBitmap(bitmap);
             } else if (isRefresh) {
                 Log.d(TAG, "Skipping pre-processing due to refresh flag.");
             } else {
@@ -981,7 +1120,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 Log.d(TAG, "OCR completed. Raw text length: " + (text != null ? text.length() : 0));
             } else {
                 Log.e(TAG, "mImageTextReader is null, cannot perform OCR.");
-                text = "OCR Engine not initialized. Please restart app or check settings."; // User feedback
+                text = "OCR Engine not initialized. Please restart app or check settings.";
             }
 
             // Post-execution on UI thread
@@ -989,6 +1128,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             final int accuracy = (mImageTextReader != null) ? mImageTextReader.getAccuracy() : -1;
 
             handler.post(() -> {
+                // Dismiss loading screen with a final announcement
+                dismissLoadingDialog(getString(R.string.processing_completed)); // Assumes R.string.processing_completed exists
+
                 mProgressIndicator.setVisibility(View.GONE);
                 animateImageViewAlpha(1f);
                 Log.d(TAG, "UI: Progress indicator hidden, ImageView alpha restored.");
@@ -1043,7 +1185,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 success[0] = success[0] && downloadTrainingData(dataType, lang.getCode());
                 if (!success[0]) {
                     Log.e(TAG, "Failed to download language: " + lang.getCode() + ". Aborting further downloads for this batch.");
-                    break; // Stop if one download fails
+                    break;
                 }
             }
             handler.post(() -> {
@@ -1071,9 +1213,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 URL url = new URL(downloadURL);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setInstanceFollowRedirects(false);
-                String originalUrl = downloadURL; // Keep original for logging
-                downloadURL = followRedirects(conn, downloadURL); // Handle redirects
-                if (!originalUrl.equals(downloadURL)) { // Log redirect
+                String originalUrl = downloadURL;
+                downloadURL = followRedirects(conn, downloadURL);
+                if (!originalUrl.equals(downloadURL)) {
                     Log.d(TAG, "Redirected download URL for " + lang + ": " + downloadURL);
                 }
                 conn = (HttpURLConnection) new URL(downloadURL).openConnection(); // Re-open connection after redirects
@@ -1132,7 +1274,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                     break;
                 default: // Assuming "fast" is the default
                     url = lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_FAST : Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU;
-                    break; // Fixed from previous version: ensure it returns for default case or has a generic format.
+                    break;
             }
             Log.v(TAG, "Resolved download URL for " + lang + " (" + dataType + "): " + url);
             return url;

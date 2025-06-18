@@ -1,5 +1,8 @@
 package io.github.subhamtyagi.ocr;
 
+import android.app.Dialog;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -34,32 +37,66 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
             return view;
         }
 
+
         String resultantTextString = arguments.getString(ARGUMENT_TEXT, "");
-        TextView resultantText = view.findViewById(R.id.resultant_text);
-        ImageButton btnCopy = view.findViewById(R.id.btn_copy);
-        ImageButton btnShare = view.findViewById(R.id.btn_share);
+
+        TextView resultantText = view.findViewById(R.id.recognized_text_view);
+
+        // CHANGED: The variable type is now MaterialButton instead of ImageButton.
+        com.google.android.material.button.MaterialButton btnCopy = view.findViewById(R.id.btn_copy);
+        com.google.android.material.button.MaterialButton btnShare = view.findViewById(R.id.btn_share);
+
+        resultantText.setText(resultantTextString);
 
         setupButtons(resultantTextString, btnCopy, btnShare, resultantText);
 
         return view;
     }
 
-    private void setupButtons(String text, ImageButton btnCopy, ImageButton btnShare, TextView resultantText) {
-        if (TextUtils.isEmpty(text.trim())) {
-            setButtonState(btnCopy, false);
-            setButtonState(btnShare, false);
-            resultantText.setText(R.string.no_results);
-        } else {
-            resultantText.setText(text);
-            btnCopy.setOnClickListener(v -> copyToClipboard(text));
-            btnShare.setOnClickListener(v -> shareText(text));
-        }
+    private void setupButtons(String resultantTextString, com.google.android.material.button.MaterialButton btnCopy, com.google.android.material.button.MaterialButton btnShare, TextView resultantText) {
+
+        // Setup the Copy Button
+        btnCopy.setOnClickListener(view -> {
+            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+            android.content.ClipData clip = android.content.ClipData.newPlainText("Copied Text", resultantTextString);
+            clipboard.setPrimaryClip(clip);
+            android.widget.Toast.makeText(getContext(), "Copied to clipboard", android.widget.Toast.LENGTH_SHORT).show();
+        });
+
+        // Setup the Share Button
+        btnShare.setOnClickListener(view -> {
+            android.content.Intent shareIntent = new android.content.Intent();
+            shareIntent.setAction(android.content.Intent.ACTION_SEND);
+            shareIntent.putExtra(android.content.Intent.EXTRA_TEXT, resultantTextString);
+            shareIntent.setType("text/plain");
+            startActivity(android.content.Intent.createChooser(shareIntent, "Share text via"));
+        });
     }
 
     private void setButtonState(ImageButton button, boolean enabled) {
         button.setEnabled(enabled);
         button.setAlpha(enabled ? 1f : 0.3f);
     }
+
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        Dialog dialog = getDialog();
+        if (dialog != null) {
+            View bottomSheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                // Set the layout parameters to match the parent's height
+                bottomSheet.getLayoutParams().height = ViewGroup.LayoutParams.MATCH_PARENT;
+
+                // Get the BottomSheetBehavior and set its state to expanded
+                BottomSheetBehavior<View> behavior = BottomSheetBehavior.from(bottomSheet);
+                behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            }
+        }
+    }
+
 
     private void copyToClipboard(String text) {
         ClipboardManager clipboardManager = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
