@@ -21,6 +21,7 @@ import com.googlecode.leptonica.android.ReadFile;
 import com.googlecode.leptonica.android.Rotate;
 import com.googlecode.leptonica.android.Skew;
 import com.googlecode.leptonica.android.WriteFile;
+import com.googlecode.tesseract.android.TessBaseAPI;
 
 import java.util.Collections;
 import java.util.Map;
@@ -118,7 +119,9 @@ public class Utils {
     }
 
     public static int getPageSegMode() {
-        return Integer.parseInt(SpUtil.getInstance().getString(Constants.KEY_PAGE_SEG_MODE, "1"));
+//        return Integer.parseInt(SpUtil.getInstance().getString(Constants.KEY_PAGE_SEG_MODE, "1"));
+//        return TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT;
+        return TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK;
     }
 
     public static void putLastUsedText(String text) {
