@@ -1,57 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-     xmlns:android="http://schemas.android.com/apk/res/android"
-     xmlns:app="http://schemas.android.com/apk/res-auto"
-     xmlns:tools="http://schemas.android.com/tools"
-     android:layout_height="wrap_content"
-     android:layout_width="match_parent">
+<!-- STEP 1: Changed the root view to RelativeLayout -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <!-- Height is match_parent so the sheet can expand fully -->
 
+    <!-- STEP 2: Created a container for the buttons and pinned it to the bottom -->
     <LinearLayout
-         android:layout_height="55dp"
-         android:layout_width="match_parent"
-         android:orientation="horizontal"
-         android:id="@+id/action_bar">
+        android:id="@+id/button_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:padding="8dp">
 
-        <ImageButton
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_copy"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Copy"
-            app:srcCompat="@drawable/ic_baseline_copy_all_24" />
+            android:text="@string/copy"
+            app:icon="@drawable/ic_baseline_copy_all_24" />
 
-
-        <ImageButton
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_share"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Share"
-            app:srcCompat="@drawable/ic_baseline_share_24" />
-
-
+            android:text="@string/share"
+            app:icon="@drawable/ic_baseline_share_24" />
     </LinearLayout>
 
-    <androidx.core.widget.NestedScrollView
-         android:layout_height="match_parent"
-         android:layout_width="match_parent"
-         android:layout_below="@id/action_bar"
-         android:fillViewport="true">
+
+    <!-- STEP 3: Positioned the ScrollView to fill the space ABOVE the buttons -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/button_container"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="3dp"
+        android:layout_marginBottom="-3dp"
+        android:padding="16dp">
 
         <TextView
-             android:layout_height="wrap_content"
-             android:layout_width="match_parent"
-             android:paddingRight="16dp"
-             android:paddingBottom="12dp"
-             android:textSize="16sp"
-             android:paddingLeft="16dp"
-             tools:text="Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
-             android:textIsSelectable="true"
-             android:id="@+id/resultant_text"
-             android:paddingTop="12dp" />
+            android:id="@+id/recognized_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            tools:text="This is short text." />
 
-    </androidx.core.widget.NestedScrollView>
+    </ScrollView>
 
 </RelativeLayout>
+
