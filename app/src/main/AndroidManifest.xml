@@ -1,24 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    >
+    xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissions required by your app -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- WRITE_EXTERNAL_STORAGE is deprecated after API 28.
+         For newer Android versions, writing to public locations should primarily use Storage Access Framework (ACTION_CREATE_DOCUMENT).
+         Keeping it with maxSdkVersion for compatibility with older devices if needed for other write operations. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Feature declaration for camera; not required means app can run without a camera -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-
-
+    <!-- Queries for Android 11+ (API 30+) to declare intents your app interacts with -->
     <queries>
+        <!-- For camera apps -->
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>
+        <!-- For image picking from gallery/files -->
         <intent>
             <action android:name="android.intent.action.PICK" />
-
             <data android:mimeType="image/jpeg" />
+        </intent>
+        <!-- For opening text files with ACTION_VIEW -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="text/plain" />
+        </intent>
+        <!-- For SAF file creation intent -->
+        <intent>
+            <action android:name="android.intent.action.CREATE_DOCUMENT" />
+            <data android:mimeType="text/plain" />
+        </intent>
+        <!-- For SAF file opening intent -->
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT" />
+            <data android:mimeType="text/plain" />
         </intent>
     </queries>
 
@@ -30,8 +51,22 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:screenOrientation="nosensor"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        android:requestLegacyExternalStorage="true"> <!-- This flag is crucial for READ_EXTERNAL_STORAGE on Android 10+ for non-app-specific directories. -->
 
+        <!-- FileProvider for secure file sharing, added from development2 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true"
+            tools:replace="android:authorities">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths" />
+        </provider>
+
+        <!-- ScreenshotTile service - commented out in development branch, preserved here -->
         <!-- <service
              android:name=".screenshot.ScreenshotTile"
              android:enabled="true"
@@ -45,34 +80,43 @@
              <meta-data
                  android:name="android.service.quicksettings.ACTIVE_TILE"
                  android:value="true" />
-         </service>-->
+         </service> -->
 
+        <!-- Your Activities -->
         <activity
             android:name=".SettingsActivity"
             android:label="@string/settings"
             android:screenOrientation="nosensor" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="nosensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
-
                 <category android:name="android.intent.category.DEFAULT" />
-
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
-            android:exported="true"
-         />
 
+        <!-- Crop Image Activity: Using com.canhub.cropper as per development2 branch -->
+        <activity
+            android:name="com.canhub.cropper.CropImageActivity"
+            android:exported="true" />
+
+        <!-- Saved Results Activity, added in development2 branch -->
+        <activity
+            android:name=".SavedResultsActivity"
+            android:label="Saved OCR Results"
+            android:parentActivityName=".MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
+        </activity>
 
     </application>
 

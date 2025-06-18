@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <!-- various key to store the setting values -->
     <string name="key_language_for_tesseract" translatable="false">language_for_tesseract</string>
     <string name="key_tess_training_data_source" translatable="false">tess_training_data_source</string>
     <string name="key_grayscale_image_ocr" translatable="false">grayscale_image_ocr</string>
@@ -75,4 +74,8 @@
     <string name="select_search_language">Select or Search Languages</string>
     <string name="learn_about_the_above_parameters">Learn more about the parameters</string>
     <string name="about_the_tesseract_parameters">Learn more</string>
+
+    <string name="scan_button_description">Scan a new image</string>
+    <string name="access_saved_files_description">Access saved OCR files</string>
+
 </resources>
