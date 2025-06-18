@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="?android:attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+    <!-- ADDED THIS LINE -->
+
+    <TextView
+        android:id="@+id/tv_file_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceListItem"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:textStyle="bold"
+        tools:text="recent_ocr_20250619_103045.txt" />
+
+    <!-- This TextView displays the full path. You can remove it if you only want the file name -->
+    <TextView
+        android:id="@+id/tv_file_path"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceListItemSmall"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        tools:text="/storage/emulated/0/Android/data/your.package.name/files/OCR_Recent_Saves/recent_ocr_20250619_103045.txt" />
+
+</LinearLayout>

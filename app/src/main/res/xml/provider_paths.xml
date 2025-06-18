@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Path for files saved to the public Documents/OCR_Results folder.
+         This is used by FileProvider to generate Uris for files within this directory,
+         allowing other apps (or your own app via ACTION_VIEW) to open them securely. -->
+    <external-path
+        name="ocr_public_results_folder"
+        path="Documents/OCR_Results/" />
+
+</paths>
