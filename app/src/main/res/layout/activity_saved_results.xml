@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".SavedResultsActivity">
+
+    <!-- Optional Toolbar (if you choose to uncomment it in Java) -->
+    <!--
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:titleTextColor="@android:color/white"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        android:elevation="4dp"
+        android:theme="?attr/actionBarTheme" />
+    -->
+
+    <!-- The Button for opening the file picker - THIS ID IS CRUCIAL -->
+    <Button
+        android:id="@+id/btn_open_file_picker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="16dp"
+        android:text="Open Saved OCR File"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:drawableStart="@android:drawable/ic_menu_edit"
+        android:drawablePadding="8dp"
+        android:backgroundTint="@color/design_default_color_primary"
+        android:textColor="@android:color/white"
+        app:cornerRadius="8dp" />
+
+    <!-- Text view to show messages - THIS ID IS CRUCIAL -->
+    <TextView
+        android:id="@+id/tv_no_saved_files"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="32dp"
+        android:text="Tap 'Open Saved OCR File' to select a text file."
+        android:visibility="gone"
+        android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+    <!-- RecyclerView to potentially display files - THIS ID IS CRUCIAL -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_saved_files"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp"
+        android:visibility="gone" /> <!-- Initially hidden, as we're now using SAF picker -->
+
+</LinearLayout>

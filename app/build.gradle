@@ -1,4 +1,6 @@
 apply plugin: 'com.android.application'
+// REMOVED THE FOLLOWING LINE WHICH WAS CAUSING THE ERROR:
+// implementation 'com.theartofdev.edmodo:android-image-cropper:2.8.0' // This line was misplaced and redundant
 
 android {
     compileSdkVersion 35
@@ -8,8 +10,8 @@ android {
 
     defaultConfig {
         applicationId "io.github.subhamtyagi.ocr"
-        minSdkVersion 21
-        targetSdkVersion 33
+        minSdkVersion 24
+        targetSdkVersion 33 // Keep targetSdkVersion 33 for now
         versionCode 15
         versionName "5.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -74,17 +76,26 @@ android {
 
 dependencies {
 
-    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
-    implementation project(':cropper')
+    implementation fileTree(dir: 'libs', include: ['.jar', '.aar'])
+    // REMOVED: implementation project(':cropper') - This local module is being replaced
 
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.preference:preference:1.2.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
-   // implementation 'cz.adaptech:tesseract4android:4.1.1'
+    // This is the correct Image Cropper Library that you are using and is correctly placed
+    implementation 'com.vanniktech:android-image-cropper:4.6.0' // As of June 2025, 4.6.0 is a stable and recent version
+
+    // Tesseract dependencies
     implementation 'cz.adaptech.tesseract4android:tesseract4android-openmp:4.3.0'
     implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
+
+    // NEW: SwipeRefreshLayout dependency
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0' // Stable version
+
+    // NEW: Lifecycle Runtime dependency (for Lifecycle.State)
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.0' // Or the latest stable version
 
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 
@@ -126,5 +137,3 @@ static String getRepositoryURL() {
         return ""
     }
 }
-
-

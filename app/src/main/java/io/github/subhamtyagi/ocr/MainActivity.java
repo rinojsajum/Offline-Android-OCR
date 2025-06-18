@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.text.Html;
 import android.util.Log;
@@ -26,14 +27,25 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.Lifecycle;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.FileProvider;
+
+// NEW: Explicit imports for SwipeRefreshLayout and Lifecycle
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.lifecycle.Lifecycle; // For Lifecycle.State
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.googlecode.tesseract.android.TessBaseAPI;
-import com.theartofdev.edmodo.cropper.CropImage;
-import com.theartofdev.edmodo.cropper.CropImageView;
+
+import com.canhub.cropper.CropImage;
+import com.canhub.cropper.CropImageContract;
+import com.canhub.cropper.CropImageContractOptions;
+import com.canhub.cropper.CropImageOptions;
+import com.canhub.cropper.CropImageView;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -44,7 +56,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -62,6 +77,8 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     public static final String TAG = "MainActivity";
     private static final int REQUEST_CODE_SETTINGS = 797;
     private static boolean isRefresh = false;
+
+    private String pendingTextToSave = null;
 
     private File dirBest;
     private File dirStandard;
@@ -92,12 +109,49 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private LinearProgressIndicator mProgressBar;
     private TextView mProgressMessage;
 
+    private FloatingActionButton mSavedFilesFab;
+
+    private ActivityResultLauncher<CropImageContractOptions> cropImageLauncher;
+    private ActivityResultLauncher<Intent> createDocumentLauncher;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         SpUtil.getInstance().init(this);
+
+        cropImageLauncher = registerForActivityResult(new CropImageContract(), result -> {
+            if (result.isSuccessful()) {
+                Uri imageUri = result.getUriContent();
+                if (imageUri != null) {
+                    convertImageToText(imageUri);
+                } else {
+                    Toast.makeText(this, "Cropped image URI is null.", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Exception error = result.getError();
+                Log.e(TAG, "Image cropping failed: " + (error != null ? error.getMessage() : "Unknown error"));
+                Toast.makeText(this, "Image cropping failed: " + (error != null ? error.getMessage() : "Unknown error"), Toast.LENGTH_LONG).show();
+            }
+        });
+
+        createDocumentLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                Uri uri = result.getData().getData();
+                if (uri != null && pendingTextToSave != null) {
+                    writeTextToUri(uri, pendingTextToSave);
+                    pendingTextToSave = null;
+                } else {
+                    Toast.makeText(this, "Failed to get URI for saving or no text pending.", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(this, "File save cancelled or failed.", Toast.LENGTH_SHORT).show();
+                pendingTextToSave = null;
+            }
+        });
+
 
         mImageView = findViewById(R.id.source_image);
         mProgressIndicator = findViewById(R.id.progress_indicator);
@@ -108,6 +162,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         mProgressBar = findViewById(R.id.progress_bar);
         mProgressMessage = findViewById(R.id.progress_message);
         mDownloadLayout = findViewById(R.id.download_layout);
+
+        mSavedFilesFab = findViewById(R.id.btn_saved_files);
+
 
         executorService = Executors.newFixedThreadPool(1);
         handler = new Handler(Looper.getMainLooper());
@@ -129,8 +186,8 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             } else {
                 downloadLanguageData();
             }
-
         });
+
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             if (isNoLanguagesDataMissingFromSet()) {
                 if (mImageTextReader != null) {
@@ -157,7 +214,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 mImageView.setImageBitmap(bitmap);
             }
         }
+
+        mSavedFilesFab.setOnClickListener(v -> openSavedFilesFolder());
     }
+
 
     @Override
     protected void onResume() {
@@ -183,15 +243,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 }
             }
         }
-        // Set currentDirectory to the last initialized directory (standard)
         currentDirectory = new File(dirStandard, "tessdata");
     }
 
 
-    /**
-     * initialize the OCR i.e tesseract api
-     * if there is no training data in directory than it will ask for download
-     */
     private void initializeOCR() {
         Set<Language> languages = Utils.getTrainingDataLanguages(this);
         File cf;
@@ -213,6 +268,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 currentDirectory = new File(dirFast, "tessdata");
 
         }
+
 
         if (isNoLanguagesDataMissingFromSet()) {
             startImageTextReaderThread(cf, languages);
@@ -290,7 +346,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     }
 
     private void selectImage() {
-        CropImage.activity().setGuidelines(CropImageView.Guidelines.ON).start(this);
+        CropImageOptions options = new CropImageOptions();
+        options.guidelines = CropImageView.Guidelines.ON;
+        cropImageLauncher.launch(new CropImageContractOptions(null, options));
     }
 
     private void convertImageToText(Uri imageUri) {
@@ -310,20 +368,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         if (requestCode == REQUEST_CODE_SETTINGS) {
             initializeOCR();
         }
-        if (resultCode == RESULT_OK) {
-            if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-                if (isNoLanguagesDataMissingFromSet()) {
-                    CropImage.ActivityResult result = CropImage.getActivityResult(data);
-                    if (result != null) {
-                        convertImageToText(result.getUri());
-                    }
-                } else {
-                    initializeOCR();
-                }
-
-            }
-        }
     }
+
+    // `onRequestPermissionsResult` is removed as WRITE_EXTERNAL_STORAGE is no longer directly used for public saves.
+    // SAF handles its own permissions.
 
     @Override
     protected void onDestroy() {
@@ -373,7 +421,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             bitmap.compress(Bitmap.CompressFormat.JPEG, 30, fileOutputStream);
             fileOutputStream.close();
         } catch (IOException e) {
-            Log.e(TAG, "loadBitmapFromStorage: " + e.getLocalizedMessage());
+            Log.e(TAG, "saveBitmapToStorage: " + e.getLocalizedMessage());
         }
     }
 
@@ -395,9 +443,62 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         if (this.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
             BottomSheetResultsFragment bottomSheetResultsFragment = BottomSheetResultsFragment.newInstance(text);
             bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
+            // Prompt the user to save the extracted text
+            showSaveTextDialog(text);
         }
-
     }
+
+    private void showSaveTextDialog(final String extractedText) {
+        new AlertDialog.Builder(this)
+                .setTitle("Save Text")
+                .setMessage("Do you want to save the extracted text?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    pendingTextToSave = extractedText;
+
+                    SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault());
+                    String suggestedFileName = "OCR_Result_" + timeFormat.format(new Date()) + ".txt";
+
+                    Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    intent.setType("text/plain");
+                    intent.putExtra(Intent.EXTRA_TITLE, suggestedFileName);
+
+                    // Removed the problematic EXTRA_INITIAL_URI part
+                    // as it was causing "Cannot resolve method 'buildTreeUri'" and "Cannot resolve symbol 'get'"
+                    // The system picker will open to its default location, and the user can navigate.
+
+                    createDocumentLauncher.launch(intent);
+
+                })
+                .setNegativeButton("No", (dialog, which) -> {
+                    dialog.dismiss();
+                    pendingTextToSave = null;
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void writeTextToUri(Uri uri, String textToSave) {
+        executorService.submit(() -> {
+            try (OutputStream outputStream = getContentResolver().openOutputStream(uri)) {
+                if (outputStream != null) {
+                    outputStream.write(textToSave.getBytes());
+                    outputStream.write("\n\n---\n\n".getBytes());
+                    handler.post(() -> Toast.makeText(MainActivity.this, "Text saved successfully to selected location!", Toast.LENGTH_LONG).show());
+                } else {
+                    handler.post(() -> Toast.makeText(MainActivity.this, "Failed to open output stream for saving.", Toast.LENGTH_SHORT).show());
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "Error writing text to URI: " + e.getMessage());
+                handler.post(() -> Toast.makeText(MainActivity.this, "Error saving text: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void openSavedFilesFolder() {
+        startActivity(new Intent(MainActivity.this, SavedResultsActivity.class));
+    }
+
 
     private class ConvertImageToText implements Runnable {
         private Bitmap bitmap;
@@ -408,14 +509,12 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
         @Override
         public void run() {
-            // Pre-execute on UI thread
             handler.post(() -> {
                 mProgressIndicator.setProgress(0);
                 mProgressIndicator.setVisibility(View.VISIBLE);
                 animateImageViewAlpha(0.2f);
             });
 
-            // Background execution
             if (!isRefresh && Utils.isPreProcessImage()) {
                 bitmap = Utils.preProcessBitmap(bitmap);
             }
@@ -423,7 +522,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             saveBitmapToStorage(bitmap);
             String text = mImageTextReader.getTextFromBitmap(bitmap);
 
-            // Post-execution on UI thread
             handler.post(() -> {
                 mProgressIndicator.setVisibility(View.GONE);
                 animateImageViewAlpha(1f);
@@ -446,6 +544,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             }
         }
     }
+
 
     private class DownloadTraining implements Runnable {
         private final String dataType;
@@ -498,11 +597,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 }
                 size = Utils.getSize(totalContentSize);
 
-                // Switch from indeterminate to determinate progress bar
                 handler.post(() -> {
                     mProgressBar.setVisibility(View.VISIBLE);
                     mProgressMessage.setText(String.format("0%s%s", getString(R.string.percentage_downloaded), size));
-                    mProgressBar.setProgress(0);               // Reset progress bar to 0
+                    mProgressBar.setProgress(0);
                 });
 
                 try (InputStream input = new BufferedInputStream(conn.getInputStream()); OutputStream output = new FileOutputStream(new File(currentDirectory, String.format(Constants.LANGUAGE_CODE, lang)))) {
@@ -536,8 +634,8 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                     return lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_BEST : lang.equals("eqo") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU : String.format(Constants.TESSERACT_DATA_DOWNLOAD_URL_BEST, lang);
                 case "standard":
                     return lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_STANDARD : lang.equals("eqo") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU : String.format(Constants.TESSERACT_DATA_DOWNLOAD_URL_STANDARD, lang);
-                default: // Assuming "fast" is the default
-                    return lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_FAST : lang.equals("eqo") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU : String.format(Constants.TESSERACT_DATA_DOWNLOAD_URL_FAST, lang);
+                default:
+                    return lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_FAST : lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU : String.format(Constants.TESSERACT_DATA_DOWNLOAD_URL_FAST, lang);
             }
         }
 
@@ -547,14 +645,13 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
                     String location = conn.getHeaderField("Location");
                     URL base = new URL(downloadURL);
-                    downloadURL = new URL(base, location).toExternalForm(); // Handle relative URLs
-                    conn = (HttpURLConnection) new URL(downloadURL).openConnection(); // Re-open connection
+                    downloadURL = new URL(base, location).toExternalForm();
+                    conn = (HttpURLConnection) new URL(downloadURL).openConnection();
                 } else {
-                    break; // No more redirects
+                    break;
                 }
             }
             return downloadURL;
         }
     }
-
 }

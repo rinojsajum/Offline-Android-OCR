@@ -92,16 +92,35 @@
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/btn_scan"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="16dp"
-            android:clickable="true"
-            android:contentDescription="@string/generic_image_description"
-            android:focusable="true"
-            app:srcCompat="@drawable/ic_baseline_photo_library_24" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btn_scan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_margin="16dp"
+                android:clickable="true"
+                android:contentDescription="@string/scan_button_description"
+                android:focusable="true"
+                app:srcCompat="@drawable/ic_baseline_photo_library_24" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btn_saved_files"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentBottom="true"
+                android:layout_margin="16dp"
+                android:clickable="true"
+                android:contentDescription="Access saved OCR files"
+                android:focusable="true"
+                app:srcCompat="@drawable/ic_baseline_folder_open_24" />
+
+        </RelativeLayout>
 
     </FrameLayout>
 
