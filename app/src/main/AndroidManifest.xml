@@ -3,10 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Permissions required by your app -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> <!-- Essential for listing files from public Documents folder -->
     <!-- WRITE_EXTERNAL_STORAGE is deprecated after API 28.
-         For newer Android versions, use MediaStore or Storage Access Framework.
-         Keep it for compatibility with older devices if needed. -->
+         For newer Android versions, writing to public locations should primarily use Storage Access Framework (ACTION_CREATE_DOCUMENT).
+         Keeping it with maxSdkVersion for compatibility with older devices if needed for other write operations. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -26,14 +26,19 @@
             <action android:name="android.intent.action.PICK" />
             <data android:mimeType="image/jpeg" />
         </intent>
-        <!-- Added: For opening text files with ACTION_VIEW -->
+        <!-- For opening text files with ACTION_VIEW -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="text/plain" />
         </intent>
-        <!-- Added: For SAF file creation intent on Android 11+ -->
+        <!-- For SAF file creation intent -->
         <intent>
             <action android:name="android.intent.action.CREATE_DOCUMENT" />
+            <data android:mimeType="text/plain" />
+        </intent>
+        <!-- For SAF file opening intent -->
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT" />
             <data android:mimeType="text/plain" />
         </intent>
     </queries>
@@ -47,9 +52,9 @@
         android:screenOrientation="nosensor"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"> <!-- IMPORTANT: This flag is crucial for READ_EXTERNAL_STORAGE to work on Android 10+ for non-app-specific directories. -->
 
-        <!-- FileProvider for secure file sharing - CORRECTED AUTHORITY -->
+        <!-- FileProvider for secure file sharing -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -83,7 +88,6 @@
             </intent-filter>
         </activity>
 
-        <!-- UPDATED: Reference the CropImageActivity from the 'com.canhub.cropper' library -->
         <activity
             android:name="com.canhub.cropper.CropImageActivity"
             android:exported="true" />

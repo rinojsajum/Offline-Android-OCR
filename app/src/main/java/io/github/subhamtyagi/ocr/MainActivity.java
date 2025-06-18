@@ -22,6 +22,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.os.Environment; // Added for Environment.DIRECTORY_DOCUMENTS
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,10 +30,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.FileProvider;
-
-// NEW: Explicit imports for SwipeRefreshLayout and Lifecycle
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-import androidx.lifecycle.Lifecycle; // For Lifecycle.State
+import androidx.lifecycle.Lifecycle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -78,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private static final int REQUEST_CODE_SETTINGS = 797;
     private static boolean isRefresh = false;
 
-    private String pendingTextToSave = null;
+    private String pendingTextToSave = null; // For SAF save
 
     private File dirBest;
     private File dirStandard;
@@ -222,7 +221,11 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     @Override
     protected void onResume() {
         super.onResume();
-        mLanguageName.setText(Utils.getTrainingDataLanguages(this).stream().map(Language::getName).collect(Collectors.joining(", ")));
+        Set<Language> languages = Utils.getTrainingDataLanguages(this);
+        if (languages == null) {
+            languages = new HashSet<>();
+        }
+        mLanguageName.setText(languages.stream().map(Language::getName).collect(Collectors.joining(", ")));
     }
 
     private void initDirectories() {
@@ -249,6 +252,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     private void initializeOCR() {
         Set<Language> languages = Utils.getTrainingDataLanguages(this);
+        if (languages == null) {
+            languages = new HashSet<>();
+        }
         File cf;
         mTrainingDataType = Utils.getTrainingDataType();
         mPageSegMode = Utils.getPageSegMode();
@@ -302,6 +308,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private void downloadLanguageData() {
         Set<Language> missingLanguage = new HashSet<>();
         Set<Language> languages = Utils.getTrainingDataLanguages(this);
+        if (languages == null) {
+            languages = new HashSet<>();
+        }
+
         if (!Utils.isNetworkAvailable(getApplication())) {
             Toast.makeText(this, getString(R.string.you_are_not_connected_to_internet), Toast.LENGTH_SHORT).show();
             return;
@@ -324,6 +334,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private boolean isNoLanguagesDataMissingFromSet() {
         final String dataType = mTrainingDataType;
         Set<Language> languages = Utils.getTrainingDataLanguages(this);
+        if (languages == null) {
+            languages = new HashSet<>();
+        }
         for (Language language : languages) {
             if (isLanguageDataMissing(dataType, language)) return false;
         }
@@ -369,9 +382,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             initializeOCR();
         }
     }
-
-    // `onRequestPermissionsResult` is removed as WRITE_EXTERNAL_STORAGE is no longer directly used for public saves.
-    // SAF handles its own permissions.
 
     @Override
     protected void onDestroy() {
@@ -443,7 +453,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         if (this.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
             BottomSheetResultsFragment bottomSheetResultsFragment = BottomSheetResultsFragment.newInstance(text);
             bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
-            // Prompt the user to save the extracted text
+            // Prompt the user to save to public location (SAF)
             showSaveTextDialog(text);
         }
     }
@@ -451,7 +461,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private void showSaveTextDialog(final String extractedText) {
         new AlertDialog.Builder(this)
                 .setTitle("Save Text")
-                .setMessage("Do you want to save the extracted text?")
+                .setMessage("Do you want to save the extracted text to a public location?")
                 .setPositiveButton("Yes", (dialog, which) -> {
                     pendingTextToSave = extractedText;
 
@@ -463,9 +473,31 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                     intent.setType("text/plain");
                     intent.putExtra(Intent.EXTRA_TITLE, suggestedFileName);
 
-                    // Removed the problematic EXTRA_INITIAL_URI part
-                    // as it was causing "Cannot resolve method 'buildTreeUri'" and "Cannot resolve symbol 'get'"
-                    // The system picker will open to its default location, and the user can navigate.
+                    // --- NEW LOGIC: Attempt to create the folder and suggest Documents root ---
+                    File publicDocumentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+                    File ocrResultsDir = null;
+
+                    if (publicDocumentsDir != null) {
+                        ocrResultsDir = new File(publicDocumentsDir, "OCR_Results");
+                        if (!ocrResultsDir.exists()) {
+                            // Try to create the directory. This is best-effort and might fail due to permissions.
+                            // On modern Android (API 29+), direct creation in public paths is restricted without SAF tree access.
+                            // However, it's a good practice to ensure it exists if the user navigates there.
+                            if (ocrResultsDir.mkdirs()) {
+                                Log.d(TAG, "Created Documents/OCR_Results directory.");
+                            } else {
+                                Log.w(TAG, "Failed to create Documents/OCR_Results directory. It might already exist or permissions are restrictive.");
+                            }
+                        }
+                    }
+
+                    // For API 26+ (Android 8.0 Oreo), try to set an initial URI for the Documents folder.
+                    // This is a hint, and not all file managers will respect it exactly.
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        Uri initialUri = Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments");
+                        intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, initialUri);
+                    }
+                    // --- END NEW LOGIC ---
 
                     createDocumentLauncher.launch(intent);
 
@@ -474,7 +506,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                     dialog.dismiss();
                     pendingTextToSave = null;
                 })
-                .setCancelable(false)
+                .setCancelable(true)
                 .show();
     }
 
@@ -484,7 +516,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 if (outputStream != null) {
                     outputStream.write(textToSave.getBytes());
                     outputStream.write("\n\n---\n\n".getBytes());
-                    handler.post(() -> Toast.makeText(MainActivity.this, "Text saved successfully to selected location!", Toast.LENGTH_LONG).show());
+                    handler.post(() -> {
+                        Toast.makeText(MainActivity.this, "Text saved successfully to: " + uri.getPath() + " (visible in file managers)", Toast.LENGTH_LONG).show();
+                        Log.d(TAG, "File saved to URI: " + uri.toString());
+                    });
                 } else {
                     handler.post(() -> Toast.makeText(MainActivity.this, "Failed to open output stream for saving.", Toast.LENGTH_SHORT).show());
                 }
@@ -549,11 +584,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private class DownloadTraining implements Runnable {
         private final String dataType;
         private final Set<Language> languages;
-        private String size;
 
         public DownloadTraining(String dataType, Set<Language> langs) {
             this.dataType = dataType;
-            this.languages = langs;
+            this.languages = (langs != null) ? langs : new HashSet<>();
         }
 
         @Override
@@ -584,6 +618,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             if (downloadURL == null) {
                 return false;
             }
+            String size;
             try {
                 URL url = new URL(downloadURL);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -597,9 +632,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 }
                 size = Utils.getSize(totalContentSize);
 
+                String finalSize = size;
                 handler.post(() -> {
                     mProgressBar.setVisibility(View.VISIBLE);
-                    mProgressMessage.setText(String.format("0%s%s", getString(R.string.percentage_downloaded), size));
+                    mProgressMessage.setText(String.format("0%s%s", getString(R.string.percentage_downloaded), finalSize));
                     mProgressBar.setProgress(0);
                 });
 
@@ -615,7 +651,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                         int percentage = (downloaded * 100) / totalContentSize;
                         handler.post(() -> {
                             mProgressBar.setProgress(percentage);
-                            mProgressMessage.setText(String.format("%d%s%s.", percentage, getString(R.string.percentage_downloaded), size));
+                            mProgressMessage.setText(String.format("%d%s%s.", percentage, getString(R.string.percentage_downloaded), finalSize));
                         });
                     }
                     output.flush();
@@ -635,7 +671,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 case "standard":
                     return lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_STANDARD : lang.equals("eqo") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU : String.format(Constants.TESSERACT_DATA_DOWNLOAD_URL_STANDARD, lang);
                 default:
-                    return lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_FAST : lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU : String.format(Constants.TESSERACT_DATA_DOWNLOAD_URL_FAST, lang);
+                    return lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_FAST : Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU ;
             }
         }
 

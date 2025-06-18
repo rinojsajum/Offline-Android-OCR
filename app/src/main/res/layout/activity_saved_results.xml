@@ -20,39 +20,57 @@
         android:theme="?attr/actionBarTheme" />
     -->
 
-    <!-- The Button for opening the file picker - THIS ID IS CRUCIAL -->
+    <!-- Header for Recent Files List - UPDATED TEXT (comment moved) -->
+    <TextView
+        android:id="@+id/tv_recent_files_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Recent Files:"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:textStyle="bold"
+        android:textAppearance="?attr/textAppearanceSubtitle1"
+        android:visibility="visible" />
+
+    <!-- Text view to show messages for the recent files list (e.g., "No files") -->
+    <TextView
+        android:id="@+id/tv_no_saved_files"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:text="No recent OCR files saved in the last week."
+        android:visibility="visible"
+        android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+    <!-- RecyclerView for displaying recent files - now takes remaining height -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_saved_files"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:visibility="gone" />
+
+    <!-- Button to open SAF file picker - MOVED TO THE END -->
     <Button
         android:id="@+id/btn_open_file_picker"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:layout_margin="16dp"
-        android:text="Open Saved OCR File"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="Open File From Storage"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
-        android:drawableStart="@android:drawable/ic_menu_edit"
+        android:drawableStart="@android:drawable/ic_menu_agenda"
         android:drawablePadding="8dp"
         android:backgroundTint="@color/design_default_color_primary"
         android:textColor="@android:color/white"
         app:cornerRadius="8dp" />
-
-    <!-- Text view to show messages - THIS ID IS CRUCIAL -->
-    <TextView
-        android:id="@+id/tv_no_saved_files"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="32dp"
-        android:text="Tap 'Open Saved OCR File' to select a text file."
-        android:visibility="gone"
-        android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-    <!-- RecyclerView to potentially display files - THIS ID IS CRUCIAL -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_saved_files"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="8dp"
-        android:visibility="gone" /> <!-- Initially hidden, as we're now using SAF picker -->
 
 </LinearLayout>
