@@ -572,15 +572,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             Log.d(TAG, "ActivityResult from settings, re-initializing OCR.");
             initializeOCR();
         }
-        // If an old CropImage call somehow still triggers this, handle its error.
-        // The constant `CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE` is from the old library.
-        if (resultCode == com.theartofdev.edmodo.cropper.CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
-            com.theartofdev.edmodo.cropper.CropImage.ActivityResult result = com.theartofdev.edmodo.cropper.CropImage.getActivityResult(data);
-            if (result != null && result.getError() != null) {
-                Log.e(TAG, "Old CropImage error detected: " + result.getError().getMessage());
-                Toast.makeText(this, "Image cropping failed (old library error): " + result.getError().getMessage(), Toast.LENGTH_LONG).show();
-            }
-        }
     }
 
     @Override
@@ -1082,7 +1073,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     private class ConvertImageToText implements Runnable {
         // Changed to final as it's passed in constructor and not reassigned.
-        private final Bitmap bitmap;
+        private Bitmap bitmap;
 
         public ConvertImageToText(Bitmap bitmap) {
             this.bitmap = bitmap;

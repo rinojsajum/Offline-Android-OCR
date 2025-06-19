@@ -118,13 +118,14 @@
                 app:srcCompat="@drawable/ic_pdf" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/btn_media_picker"  android:layout_width="wrap_content"
+                android:id="@+id/btn_scan"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
                 android:focusable="true"
-                android:contentDescription="Select Image" app:srcCompat="@drawable/ic_baseline_photo_library_24" />
+                android:contentDescription="Select Image"
+                app:srcCompat="@drawable/ic_baseline_photo_library_24" />
         </LinearLayout>
 
     </FrameLayout>
-
 </LinearLayout>
