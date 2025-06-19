@@ -87,7 +87,7 @@ dependencies {
     implementation 'com.vanniktech:android-image-cropper:4.6.0' // As of June 2025, 4.6.0 is a stable and recent version
 
     // Add this line if it's not present, or ensure it's correct
-    implementation 'com.github.CanHub:Android-Image-Cropper:4.5.0'
+//    implementation 'com.github.CanHub:Android-Image-Cropper:4.5.0'
 
     // Tesseract dependencies
     implementation 'cz.adaptech.tesseract4android:tesseract4android-openmp:4.3.0'
