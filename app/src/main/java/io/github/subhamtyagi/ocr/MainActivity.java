@@ -1164,6 +1164,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         @Override
         public void run() {
             handler.post(() -> {
+                Toast.makeText(MainActivity.this, "Please wait while the language is being downloaded...", Toast.LENGTH_LONG).show();
                 mProgressMessage.setText(getString(R.string.downloading_language));
                 mDownloadLayout.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.GONE); // Initially hide indeterminate bar, show determinate later
@@ -1241,7 +1242,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                         handler.post(() -> {
                             mProgressBar.setProgress(percentage);
                             mProgressMessage.setText(String.format("%d%s%s.", percentage, getString(R.string.percentage_downloaded), size));
-                        });
+                        });  
                     }
                     output.flush();
                     Log.d(TAG, "Download complete for " + lang + ". Saved to: " + destFile.getAbsolutePath());
