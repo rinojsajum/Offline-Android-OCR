@@ -15,7 +15,7 @@
         android:visibility="gone"
         app:indicatorColor="@color/colorAccent"
         tools:progress="20"
-        tools:visibility="true" />
+        tools:visibility="visible" />
 
     <LinearLayout
         android:id="@+id/download_layout"
