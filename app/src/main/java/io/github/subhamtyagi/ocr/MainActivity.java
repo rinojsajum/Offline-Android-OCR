@@ -1108,7 +1108,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                         handler.post(() -> {
                             mProgressBar.setProgress(percentage);
                             mProgressMessage.setText(String.format("%d%s%s.", percentage, getString(R.string.percentage_downloaded), size));
-                        });
+                        });  
                     }
                     output.flush();
                     Log.d(TAG, "Download complete for " + lang + ". Saved to: " + destFile.getAbsolutePath());
