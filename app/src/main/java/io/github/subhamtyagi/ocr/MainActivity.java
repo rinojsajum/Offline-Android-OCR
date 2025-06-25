@@ -1,5 +1,4 @@
-
-        package io.github.subhamtyagi.ocr;
+package io.github.subhamtyagi.ocr;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -38,7 +37,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import android.graphics.Matrix;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -733,14 +732,32 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                         page = renderer.openPage(i);
                         Log.d(TAG, "Opened PDF page: " + (i + 1));
 
-                        float targetDpi = 300f;
+                        // CHANGE 1: DPI is now 200f to save memory and allow multi-page processing
+                        float targetDpi = 200f;
                         int width = (int) (page.getWidth() / 72f * targetDpi);
                         int height = (int) (page.getHeight() / 72f * targetDpi);
 
                         originalBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                        Rect rect = new Rect(0, 0, width, height);
-                        page.render(originalBitmap, rect, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                        Log.i(TAG, "Page " + (i + 1) + " successfully rendered to originalBitmap. Dimensions: " + originalBitmap.getWidth() + "x" + originalBitmap.getHeight());
+
+                        Matrix matrix = new Matrix();
+                        matrix.postScale((float) width / page.getWidth(), (float) height / page.getHeight());
+
+                        // CHANGE 2: Explicitly provide a clipping Rect to prevent rendering artifacts ("boxes")
+                        Rect clip = new Rect(0, 0, width, height);
+                        page.render(originalBitmap, clip, matrix, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                        Log.i(TAG, "Page " + (i + 1) + " successfully rendered AND SCALED to originalBitmap. Dimensions: " + originalBitmap.getWidth() + "x" + originalBitmap.getHeight());
+
+                        // This ensures the "recent" view shows the PDF's first page.
+                        if (i == 0 && originalBitmap != null) {
+                            // We must create a copy, as the originalBitmap will be recycled inside this loop's finally block.
+                            final Bitmap previewBitmap = originalBitmap.copy(originalBitmap.getConfig(), false);
+                            handler.post(() -> {
+                                saveBitmapToStorage(previewBitmap);
+                                mImageView.setImageBitmap(previewBitmap);
+                                Log.d(TAG, "Updated recent view with first page of PDF.");
+                            });
+                        }
+
 
                         processedBitmap = preprocessBitmap(originalBitmap);
                         Log.d(TAG, "Page " + (i + 1) + " preprocessed.");
@@ -780,7 +797,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                     mProgressBar.setVisibility(View.GONE);
                     Log.d(TAG, "UI: OCR processing finished, progress bar hidden.");
                     showOCRResult(fullText.toString());
-                    Log.d(TAG, "showOCRResult called for PDF text.");
+                    // THIS IS THE FIX: Save the extracted PDF text as the last used text.
+                    Utils.putLastUsedText(fullText.toString());
+                    Log.d(TAG, "showOCRResult called and last used text saved for PDF.");
                 });
 
             } catch (IOException e) {
@@ -1108,7 +1127,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                         handler.post(() -> {
                             mProgressBar.setProgress(percentage);
                             mProgressMessage.setText(String.format("%d%s%s.", percentage, getString(R.string.percentage_downloaded), size));
-                        });  
+                        });
                     }
                     output.flush();
                     Log.d(TAG, "Download complete for " + lang + ". Saved to: " + destFile.getAbsolutePath());
