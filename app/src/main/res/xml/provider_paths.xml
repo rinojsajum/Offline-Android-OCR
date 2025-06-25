@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Path for files saved to the public Documents/OCR_Results folder.
-         This is used by FileProvider to generate Uris for files within this directory,
-         allowing other apps (or your own app via ACTION_VIEW) to open them securely. -->
+
+    <!-- This is your existing path. It's needed for viewing saved results. -->
     <external-path
         name="ocr_public_results_folder"
         path="Documents/OCR_Results/" />
+
+    <!-- This is the NEW path needed to fix the camera/cropper crash. -->
+    <cache-path
+        name="external_cache"
+        path="." />
 
 </paths>
