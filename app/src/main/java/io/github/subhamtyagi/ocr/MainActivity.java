@@ -122,6 +122,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private LinearProgressIndicator dialogProgressBar;
     private TextView loadingMessage;
     private boolean isProgressBarVisibleInDialog = false;
+    private volatile boolean isProcessingPdf = false;
 
     private Handler accessibilityHandler;
     private Runnable accessibilityRunnable;
@@ -736,22 +737,47 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private void processPdf(Uri uri) {
         Log.d(TAG, "processPdf: Starting PDF processing for URI: " + uri.toString());
         executorService.execute(() -> {
+            isProcessingPdf = true;
             List<String> pageTexts = new ArrayList<>(); // Changed from StringBuilder to List<String>
             try (ParcelFileDescriptor fileDescriptor = getContentResolver().openFileDescriptor(uri, "r");
                  PdfRenderer renderer = new PdfRenderer(fileDescriptor)) {
 
-                int pageCount = renderer.getPageCount();
+                final int pageCount = renderer.getPageCount();
                 Log.d(TAG, "PDF opened successfully. Total pages: " + pageCount);
+                final StringBuilder fullText = new StringBuilder();
 
+                handler.post(this::showLoadingDialog);
                 handler.post(() -> {
-                    mProgressBar.setMax(pageCount);
-                    mProgressBar.setProgress(0);
-                    mProgressBar.setVisibility(View.VISIBLE);
-                    mProgressMessage.setText("Processing PDF...");
-                    Log.d(TAG, "UI: PDF processing progress bar visible, message set.");
+                    if (loadingDialog != null && loadingDialog.isShowing()) {
+                        if (loadingSpinner != null) loadingSpinner.setVisibility(View.GONE);
+                        if (dialogProgressBar != null) {
+                            dialogProgressBar.setVisibility(View.VISIBLE);
+                            dialogProgressBar.setMax(pageCount);
+                            dialogProgressBar.setProgress(0); // Start at 0 before the loop
+                        }
+                        if (loadingMessage != null) {
+                            String msg = String.format(Locale.getDefault(), "Processing page 1 of %d...", pageCount);
+                            loadingMessage.setText(msg);
+                            currentAccessibilityMessage = msg;
+                        }
+                        isProgressBarVisibleInDialog = true;
+                        Log.d(TAG, "UI: Switched loading dialog to determinate for PDF processing.");
+                    }
                 });
 
+
                 for (int i = 0; i < pageCount; i++) {
+                    final int currentPage = i + 1;
+                    handler.post(() -> {
+                        if (dialogProgressBar != null) dialogProgressBar.setProgress(currentPage);
+                        if (loadingMessage != null) {
+                            String msg = String.format(Locale.getDefault(), "Processing page %d of %d...", currentPage, pageCount);
+                            loadingMessage.setText(msg);
+                            currentAccessibilityMessage = msg;
+                        }
+                        Log.d(TAG, "UI: PDF Progress updated to " + currentPage + "/" + pageCount);
+                    });
+
                     PdfRenderer.Page page = null;
                     Bitmap originalBitmap = null;
                     Bitmap processedBitmap = null;
@@ -794,15 +820,14 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                             Log.d(TAG, "PDF page " + (i + 1) + " closed.");
                         }
                     }
-
-                    final int progress = i + 1;
-                    handler.post(() -> {
-                        mProgressBar.setProgress(progress);
-                        Log.d(TAG, "UI: Progress updated to " + progress + "/" + pageCount);
-                    });
                 }
 
                 handler.post(() -> {
+                    isProcessingPdf = false;
+                    dismissLoadingDialog(getString(R.string.processing_completed));
+                    Log.d(TAG, "UI: PDF processing finished, loading dialog dismissed.");
+                    showOCRResult(fullText.toString());
+                    Log.d(TAG, "showOCRResult called for PDF text.");
                     mProgressMessage.setText("OCR Complete!");
                     mProgressBar.setVisibility(View.GONE);
                     Log.d(TAG, "UI: OCR processing finished, progress bar hidden.");
@@ -813,10 +838,18 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
             } catch (IOException e) {
                 Log.e(TAG, "Error processing PDF: " + e.getLocalizedMessage(), e);
-                handler.post(() -> Toast.makeText(this, "Failed to read PDF. Error: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show());
+                handler.post(() -> {
+                    isProcessingPdf = false;
+                    dismissLoadingDialog("PDF processing failed");
+                    Toast.makeText(this, "Failed to read PDF. Error: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                });
             } catch (Exception e) {
                 Log.e(TAG, "Unexpected error during PDF processing or OCR: " + e.getLocalizedMessage(), e);
-                handler.post(() -> Toast.makeText(this, "An unexpected error occurred during PDF processing.", Toast.LENGTH_LONG).show());
+                handler.post(() -> {
+                    isProcessingPdf = false;
+                    dismissLoadingDialog("An unexpected error occurred");
+                    Toast.makeText(this, "An unexpected error occurred during PDF processing.", Toast.LENGTH_LONG).show();
+                });
             }
         });
     }
@@ -1011,6 +1044,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
             final String finalCleanText = (text != null) ? Html.fromHtml(text).toString().trim() : "";
 
+            // *** FIX: Removed .intValue() from getAccuracy() which returns a primitive int ***
             final int accuracy = (mImageTextReader != null) ? mImageTextReader.getAccuracy() : -1;
 
             handler.post(() -> {
@@ -1019,7 +1053,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 mProgressIndicator.setVisibility(View.GONE);
                 animateImageViewAlpha(1f);
                 Log.d(TAG, "UI: Progress indicator hidden, ImageView alpha restored.");
-                // For single image, continue using the existing showOCRResult(String)
                 showOCRResult(finalCleanText);
                 Toast.makeText(MainActivity.this, "With Confidence: " + accuracy + "%", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "OCR Result shown. Confidence: " + accuracy + "%");
