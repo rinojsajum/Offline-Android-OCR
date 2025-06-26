@@ -82,4 +82,17 @@
     <string name="processing_image">Processing image</string>
     <string name="processing_completed">Processing completed</string>
     <string name="recognizing_text">Recognizing text</string>
+
+    <string name="ocr_results">OCR Results</string>
+    <string name="pdf_page_label">Page %d</string>
+    <string name="no_text_found">No text found.</string>
+    <string name="no_text_to_copy">No text to copy</string>
+    <string name="share_text_via">Share text via</string>
+    <string name="no_text_to_share">No text to share</string>
+    <string name="ocr_results_scroll_view_desc">OCR Results. Scrollable content.</string>
+    <string name="pdf_page_content_description">PDF Page %d content.</string>
+    <string name="copy">Copy</string>
+    <string name="ocr_result_content_description">OCR recognized text result</string>
+    <string name="ocr_text_container_desc">OCR Recognized Text Content</string>
+
 </resources>

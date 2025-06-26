@@ -1,13 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- STEP 1: Changed the root view to RelativeLayout -->
+<!-- Root view remains RelativeLayout as per your choice -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <!-- Height is match_parent so the sheet can expand fully -->
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"> <!-- Added background from previous suggestion -->
 
-    <!-- STEP 2: Created a container for the buttons and pinned it to the bottom -->
+    <!-- Title for the bottom sheet, placed at the top -->
+    <TextView
+        android:id="@+id/bottom_sheet_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/ocr_results"
+        android:textAppearance="?attr/textAppearanceHeadline6"
+        android:gravity="center_horizontal"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:importantForAccessibility="no"
+        android:layout_alignParentTop="true" />
+
+    <!-- Button container, pinned to the bottom -->
     <LinearLayout
         android:id="@+id/button_container"
         android:layout_width="match_parent"
@@ -24,7 +37,7 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:text="@string/copy"
-            app:icon="@drawable/ic_baseline_copy_all_24" />
+            app:icon="@drawable/ic_copy" /> <!-- Using ic_copy as discussed, assuming it's available -->
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_share"
@@ -34,28 +47,33 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:text="@string/share"
-            app:icon="@drawable/ic_baseline_share_24" />
+            app:icon="@drawable/ic_share" /> <!-- Using ic_share as discussed, assuming it's available -->
     </LinearLayout>
 
-
-    <!-- STEP 3: Positioned the ScrollView to fill the space ABOVE the buttons -->
+    <!-- ScrollView positioned between the title and the button container -->
     <ScrollView
+        android:id="@+id/scroll_view_results"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/button_container"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="3dp"
-        android:layout_marginBottom="-3dp"
-        android:padding="16dp">
+        android:layout_below="@id/bottom_sheet_title"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
+        android:fillViewport="true"
+        android:importantForAccessibility="yes">
 
-        <TextView
-            android:id="@+id/recognized_text_view"
+        <!-- This LinearLayout will be dynamically populated with page content -->
+        <LinearLayout
+            android:id="@+id/text_content_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="16sp"
-            tools:text="This is short text." />
-
+            android:orientation="vertical"
+            android:focusableInTouchMode="true"
+            android:focusable="true"
+            android:contentDescription="@string/ocr_text_container_desc">
+            <!-- Dynamic page views or single text view will be added here by BottomSheetResultsFragment -->
+        </LinearLayout>
     </ScrollView>
 
 </RelativeLayout>
-

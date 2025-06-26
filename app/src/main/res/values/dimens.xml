@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="page_bottom_margin">16dp</dimen>
+    <dimen name="page_padding">12dp</dimen>
+    <dimen name="text_margin_small">4dp</dimen>
+
+    <dimen name="page_corner_radius">8dp</dimen>
+    <dimen name="page_stroke_width">1dp</dimen>
+</resources>

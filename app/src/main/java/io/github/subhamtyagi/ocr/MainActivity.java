@@ -1,5 +1,4 @@
-
-        package io.github.subhamtyagi.ocr;
+package io.github.subhamtyagi.ocr;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -68,8 +67,10 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList; // Import for ArrayList
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List; // Import for List
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -585,6 +586,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             startActivityForResult(new Intent(this, SettingsActivity.class), REQUEST_CODE_SETTINGS);
             Log.d(TAG, "Options menu: Settings selected, launching SettingsActivity.");
         } else if (id == R.id.action_history) {
+            // Original call for history was for single text.
+            // For now, keep it as is, or consider how history for multi-page PDFs would be stored/displayed.
+            // For the scope of this request, we are only changing PDF output display.
             showOCRResult(Utils.getLastUsedText());
             Log.d(TAG, "Options menu: History selected, showing last used text.");
         }
@@ -642,16 +646,38 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         return bitmap;
     }
 
+    // OVERLOADED method to show OCR result for single text (from image)
     public void showOCRResult(String text) {
         if (this.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
             BottomSheetResultsFragment bottomSheetResultsFragment = BottomSheetResultsFragment.newInstance(text);
             bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
-            Log.d(TAG, "showOCRResult: Bottom sheet result fragment shown.");
+            Log.d(TAG, "showOCRResult (single text): Bottom sheet result fragment shown.");
             showSaveTextDialog(text);
         } else {
-            Log.d(TAG, "showOCRResult: Activity not in RESUMED state, not showing bottom sheet.");
+            Log.d(TAG, "showOCRResult (single text): Activity not in RESUMED state, not showing bottom sheet.");
         }
     }
+
+    // NEW method to show OCR result for multiple pages (from PDF)
+    public void showOCRResult(List<String> pageTexts) {
+        if (this.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
+            // Pass a flag or different bundle argument to indicate multi-page display
+            BottomSheetResultsFragment bottomSheetResultsFragment = BottomSheetResultsFragment.newInstanceForPdf(pageTexts);
+            bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
+            Log.d(TAG, "showOCRResult (multi-page PDF): Bottom sheet result fragment shown.");
+            // For saving, you might still want to concatenate them, or provide an option to save each page separately.
+            // For now, let's concatenate for the save dialog for simplicity unless further specified.
+            StringBuilder fullTextToSave = new StringBuilder();
+            for (int i = 0; i < pageTexts.size(); i++) {
+                fullTextToSave.append("--- Page ").append(i + 1).append(" ---\n")
+                        .append(pageTexts.get(i)).append("\n\n");
+            }
+            showSaveTextDialog(fullTextToSave.toString());
+        } else {
+            Log.d(TAG, "showOCRResult (multi-page PDF): Activity not in RESUMED state, not showing bottom sheet.");
+        }
+    }
+
 
     private void showSaveTextDialog(final String extractedText) {
         new AlertDialog.Builder(this)
@@ -710,12 +736,12 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     private void processPdf(Uri uri) {
         Log.d(TAG, "processPdf: Starting PDF processing for URI: " + uri.toString());
         executorService.execute(() -> {
+            List<String> pageTexts = new ArrayList<>(); // Changed from StringBuilder to List<String>
             try (ParcelFileDescriptor fileDescriptor = getContentResolver().openFileDescriptor(uri, "r");
                  PdfRenderer renderer = new PdfRenderer(fileDescriptor)) {
 
                 int pageCount = renderer.getPageCount();
                 Log.d(TAG, "PDF opened successfully. Total pages: " + pageCount);
-                StringBuilder fullText = new StringBuilder();
 
                 handler.post(() -> {
                     mProgressBar.setMax(pageCount);
@@ -747,11 +773,12 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
                         if (mImageTextReader != null) {
                             String result = mImageTextReader.getTextFromBitmap(processedBitmap);
-                            fullText.append("--- Page ").append(i + 1).append(" ---\n").append(result).append("\n\n");
+                            // Store each page's text separately
+                            pageTexts.add(Html.fromHtml(result != null ? result : "").toString().trim());
                             Log.d(TAG, "OCR result for Page " + (i + 1) + ": " + (result != null ? result.substring(0, Math.min(result.length(), 100)) + "..." : "No text found"));
                         } else {
                             Log.e(TAG, "ImageTextReader is not initialized for PDF OCR on Page " + (i + 1) + ". Skipping OCR for this page.");
-                            fullText.append("--- Page ").append(i + 1).append(" ---\nOCR failed: ImageTextReader not ready.\n\n");
+                            pageTexts.add("OCR failed for Page " + (i + 1) + ": ImageTextReader not ready.");
                         }
                     } finally {
                         if (processedBitmap != null && !processedBitmap.isRecycled()) {
@@ -779,8 +806,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                     mProgressMessage.setText("OCR Complete!");
                     mProgressBar.setVisibility(View.GONE);
                     Log.d(TAG, "UI: OCR processing finished, progress bar hidden.");
-                    showOCRResult(fullText.toString());
-                    Log.d(TAG, "showOCRResult called for PDF text.");
+                    // Call the new overloaded method to show page-wise results
+                    showOCRResult(pageTexts);
+                    Log.d(TAG, "showOCRResult called for PDF page texts.");
                 });
 
             } catch (IOException e) {
@@ -983,7 +1011,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
             final String finalCleanText = (text != null) ? Html.fromHtml(text).toString().trim() : "";
 
-            // *** FIX: Removed .intValue() from getAccuracy() which returns a primitive int ***
             final int accuracy = (mImageTextReader != null) ? mImageTextReader.getAccuracy() : -1;
 
             handler.post(() -> {
@@ -992,6 +1019,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 mProgressIndicator.setVisibility(View.GONE);
                 animateImageViewAlpha(1f);
                 Log.d(TAG, "UI: Progress indicator hidden, ImageView alpha restored.");
+                // For single image, continue using the existing showOCRResult(String)
                 showOCRResult(finalCleanText);
                 Toast.makeText(MainActivity.this, "With Confidence: " + accuracy + "%", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "OCR Result shown. Confidence: " + accuracy + "%");
@@ -1108,7 +1136,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                         handler.post(() -> {
                             mProgressBar.setProgress(percentage);
                             mProgressMessage.setText(String.format("%d%s%s.", percentage, getString(R.string.percentage_downloaded), size));
-                        });  
+                        });
                     }
                     output.flush();
                     Log.d(TAG, "Download complete for " + lang + ". Saved to: " + destFile.getAbsolutePath());
