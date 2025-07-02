@@ -6,7 +6,9 @@ import androidx.annotation.NonNull;
 
 import io.github.subhamtyagi.ocr.R;
 
-public class Language {
+import java.io.Serializable;
+
+public class Language implements Serializable  {
     public String getCode() {
         return code;
     }
