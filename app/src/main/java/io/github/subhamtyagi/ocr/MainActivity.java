@@ -10,6 +10,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
@@ -85,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     public static final String TAG = "MainActivity";
     private static boolean isRefresh = false;
 
-    // From colleague's version for first-run setup
+    // From your version for first-run setup
     private static final String KEY_FIRST_RUN = "isFirstRun";
     private Set<Language> initialLanguages = null;
     private File tessdataDirectory;
@@ -131,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Colleague's first-run setup logic
+        // Your first-run setup logic
         final String EXTRA_INITIAL_LANGUAGES = "initial_languages";
         SpUtil.getInstance().init(this);
         boolean isFirstRun = SpUtil.getInstance().getBoolean(KEY_FIRST_RUN, true);
@@ -154,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         setContentView(R.layout.activity_main);
         Log.d(TAG, "onCreate: Activity created.");
 
-        // Colleague's modern launcher for Settings
+        // Your modern launcher for Settings
         settingsLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -358,7 +359,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     private void initializeOCR() {
         Log.d(TAG, "initializeOCR: Initializing OCR engine.");
-        // Colleague's logic to handle initial languages from setup, or get from prefs
+        // Your logic to handle initial languages from setup, or get from prefs
         Set<Language> languages = (initialLanguages != null) ? initialLanguages : Utils.getTrainingDataLanguages(this);
         initialLanguages = null; // Consume the initial languages
         if (languages == null) {
@@ -370,7 +371,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         parameters = Utils.getAllParameters();
         Log.d(TAG, "OCR settings: Type=" + mTrainingDataType + ", PageSegMode=" + mPageSegMode + ", Languages=" + languages.stream().map(Language::getCode).collect(Collectors.joining(", ")));
 
-        // Colleague's use of a central tessdataDirectory variable
+        // Your use of a central tessdataDirectory variable
         switch (mTrainingDataType) {
             case "best":
                 tessdataDirectory = dirBest;
@@ -381,7 +382,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             default: // Default case for "fast"
                 tessdataDirectory = dirFast;
         }
-        // Your logic to set the specific currentDirectory for download/check operations
+        // Set the specific currentDirectory for download/check operations
         currentDirectory = new File(tessdataDirectory, "tessdata");
         Log.d(TAG, "Selected Tesseract data path for OCR: " + tessdataDirectory.getAbsolutePath());
 
@@ -402,7 +403,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                     mImageTextReader.tearDownEverything();
                     Log.d(TAG, "Existing ImageTextReader torn down.");
                 }
-                // Using colleague's cleaner method call with tessdataDirectory class member
+                // Using your cleaner method call with tessdataDirectory class member
                 mImageTextReader = ImageTextReader.getInstance(
                         tessdataDirectory.getAbsolutePath(), languages,
                         mPageSegMode, parameters,
@@ -545,7 +546,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        // This method is now effectively deprecated in our code.
+        // This method is now effectively deprecated in this code.
         // All activity results are handled by their respective ActivityResultLaunchers.
         Log.d(TAG, "onActivityResult (legacy): requestCode=" + requestCode);
     }
@@ -596,7 +597,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_settings) {
-            // Using colleague's modern launcher
+            // Using your modern launcher
             Intent intent = new Intent(this, SettingsActivity.class);
             settingsLauncher.launch(intent);
             Log.d(TAG, "Options menu: Settings selected, launching SettingsActivity via launcher.");
@@ -647,7 +648,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         Bitmap bitmap = null;
         try (FileInputStream fileInputStream = openFileInput("last_file.jpeg")) {
             bitmap = BitmapFactory.decodeStream(fileInputStream);
-            fileInputStream.close();
             Log.d(TAG, "Bitmap loaded from last_file.jpeg. Dimensions: " + (bitmap != null ? bitmap.getWidth() + "x" + bitmap.getHeight() : "null"));
         } catch (IOException e) {
             Log.e(TAG, "loadBitmapFromStorage: Failed to load bitmap: " + e.getLocalizedMessage(), e);
@@ -668,15 +668,22 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
     public void showOCRResult(List<String> pageTexts) {
         if (this.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
-            BottomSheetResultsFragment bottomSheetResultsFragment = BottomSheetResultsFragment.newInstanceForPdf(pageTexts);
-            bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
-            Log.d(TAG, "showOCRResult (multi-page PDF): Bottom sheet result fragment shown.");
             StringBuilder fullTextToSave = new StringBuilder();
             for (int i = 0; i < pageTexts.size(); i++) {
                 fullTextToSave.append("--- Page ").append(i + 1).append(" ---\n")
                         .append(pageTexts.get(i)).append("\n\n");
             }
-            showSaveTextDialog(fullTextToSave.toString());
+            String combinedText = fullTextToSave.toString();
+
+            BottomSheetResultsFragment bottomSheetResultsFragment = BottomSheetResultsFragment.newInstanceForPdf(pageTexts);
+            bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
+            Log.d(TAG, "showOCRResult (multi-page PDF): Bottom sheet result fragment shown.");
+
+            // Integrating friend's fix: Save the extracted PDF text as the last used text.
+            Utils.putLastUsedText(combinedText);
+            Log.d(TAG, "Saved full PDF text to history.");
+
+            showSaveTextDialog(combinedText);
         } else {
             Log.d(TAG, "showOCRResult (multi-page PDF): Activity not in RESUMED state, not showing bottom sheet.");
         }
@@ -783,13 +790,29 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                         page = renderer.openPage(i);
                         Log.d(TAG, "Opened PDF page: " + (i + 1));
 
-                        float targetDpi = 300f;
+                        // Integrating friend's fix: Lower DPI to save memory.
+                        float targetDpi = 200f;
                         int width = (int) (page.getWidth() / 72f * targetDpi);
                         int height = (int) (page.getHeight() / 72f * targetDpi);
-
                         originalBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                        page.render(originalBitmap, new Rect(0, 0, width, height), null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                        Log.i(TAG, "Page " + (i + 1) + " successfully rendered to originalBitmap. Dimensions: " + originalBitmap.getWidth() + "x" + originalBitmap.getHeight());
+
+                        // Integrating friend's fix: Use Matrix and clip for stable rendering.
+                        Matrix matrix = new Matrix();
+                        matrix.postScale((float) width / page.getWidth(), (float) height / page.getHeight());
+                        Rect clip = new Rect(0, 0, width, height);
+                        page.render(originalBitmap, clip, matrix, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                        Log.i(TAG, "Page " + (i + 1) + " successfully rendered AND SCALED. Dimensions: " + originalBitmap.getWidth() + "x" + originalBitmap.getHeight());
+
+                        // Integrating friend's feature: Show first page as preview.
+                        if (i == 0 && originalBitmap != null) {
+                            // A copy is made as originalBitmap is recycled in the finally block.
+                            final Bitmap previewBitmap = originalBitmap.copy(originalBitmap.getConfig(), false);
+                            handler.post(() -> {
+                                saveBitmapToStorage(previewBitmap); // Also saves it as last image
+                                mImageView.setImageBitmap(previewBitmap);
+                                Log.d(TAG, "Updated recent view with first page of PDF.");
+                            });
+                        }
 
                         processedBitmap = preprocessBitmap(originalBitmap);
                         Log.d(TAG, "Page " + (i + 1) + " preprocessed.");
@@ -888,6 +911,31 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
 
         Log.d(TAG, "preprocessBitmap: Finished preprocessing. Returning binarized bitmap.");
         return bmpBinarized;
+    }
+
+    // This debug helper method from your friend's branch is preserved.
+    private void saveBitmapToFile(Context context, Bitmap bitmap, String filename) {
+        Log.d(TAG, "saveBitmapToFile called for: " + filename);
+        if (bitmap == null || bitmap.isRecycled()) {
+            Log.e(TAG, "Cannot save null or recycled bitmap: " + filename);
+            return;
+        }
+        try {
+            File debugDir = new File(context.getExternalFilesDir(null), "ocr_debug_images");
+            if (!debugDir.exists()) {
+                if (!debugDir.mkdirs()) {
+                    Log.e(TAG, "Failed to create debug directory: " + debugDir.getAbsolutePath());
+                    return;
+                }
+            }
+            File debugFile = new File(debugDir, filename);
+            try (FileOutputStream out = new FileOutputStream(debugFile)) {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                Log.d(TAG, "Saved debug image: " + debugFile.getAbsolutePath());
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to save debug image " + filename + ": " + e.getMessage(), e);
+        }
     }
 
     private void initAccessibilityAnnouncer() {
