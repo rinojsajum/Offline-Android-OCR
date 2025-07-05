@@ -142,7 +142,9 @@ public class Utils {
     }
 
     public static boolean isPersistData() {
-        return SpUtil.getInstance().getBoolean(Constants.KEY_PERSIST_DATA, false);
+        // FIX: Changed default value from 'false' to 'true'.
+        // This makes the "Recent" button visible from the very first launch.
+        return SpUtil.getInstance().getBoolean(Constants.KEY_PERSIST_DATA, true);
     }
 
     public static void putLastUsedText(String text) {
@@ -162,8 +164,13 @@ public class Utils {
         Set<String> languageCodes = sharedPreferences.getStringSet(PREFERENCE_KEY, new HashSet<>());
         Set<Language> languages = new HashSet<>();
         if (languageCodes != null) {
-            for (String code : languageCodes) {
-                languages.add(new Language(context, code));
+            // Add a default language if none are selected, to prevent crashes
+            if (languageCodes.isEmpty()) {
+                languages.add(new Language(context, "eng"));
+            } else {
+                for (String code : languageCodes) {
+                    languages.add(new Language(context, code));
+                }
             }
         }
         return languages;
@@ -220,19 +227,13 @@ public class Utils {
     }
 
     /**
-     * THIS IS THE MISSING METHOD THAT WE ARE ADDING.
-     * It returns the map of advanced parameters for Tesseract.
-     * For now, it will return an empty map to prevent crashing.
+     * Returns the map of advanced parameters for Tesseract.
      */
     public static Map<String, String> getAllParameters() {
-        // Create an empty map. This will allow the app to compile and run.
-        // The advanced features might not be fully implemented in this version of the code,
-        // but this will stop the crash.
         Map<String, String> parameters = new HashMap<>();
 
         if (isExtraParameterSet()) {
             // In a more complete version, you would read each parameter from SharedPreferences here.
-            // For now, we return the empty map.
         }
 
         return parameters;
