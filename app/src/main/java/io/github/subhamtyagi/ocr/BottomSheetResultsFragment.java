@@ -141,7 +141,7 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                 pageContent.setText(Html.fromHtml(currentPageText));
                 pageContent.setMovementMethod(LinkMovementMethod.getInstance());
                 pageContent.setTextIsSelectable(true);
-                pageContent.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+                pageContent.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
                 pageViewContainer.addView(pageContent);
 
                 containerLayout.addView(pageViewContainer);

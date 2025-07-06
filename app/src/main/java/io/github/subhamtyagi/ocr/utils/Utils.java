@@ -12,11 +12,17 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
 
+import com.google.gson.Gson; // Added for List<String> serialization
+import com.google.gson.reflect.TypeToken; // Added for List<String> deserialization
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Type; // Added for Gson TypeToken
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List; // Added for List<String>
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +31,11 @@ import java.util.stream.Collectors;
  * A class that contains all the utility functions
  */
 public class Utils {
+    // New SharedPreferences keys for history
+    private static final String KEY_LAST_USED_TEXT = "last_used_text"; // Renamed from Constants.KEY_LAST_USE_IMAGE_TEXT for clarity
+    private static final String KEY_LAST_USED_IS_PDF = "last_used_is_pdf";
+    private static final String KEY_LAST_USED_PDF_PAGES = "last_used_pdf_pages";
+
     /**
      * get the training data path for Tesseract
      *
@@ -147,12 +158,57 @@ public class Utils {
         return SpUtil.getInstance().getBoolean(Constants.KEY_PERSIST_DATA, true);
     }
 
-    public static void putLastUsedText(String text) {
-        SpUtil.getInstance().putString(Constants.KEY_LAST_USE_IMAGE_TEXT, text);
+    /**
+     * Saves the last used OCR text and indicates if it's from a PDF.
+     * @param text The OCR result text (combined for PDF, raw for image).
+     * @param isPdf True if the text is from a PDF, false otherwise.
+     */
+    public static void putLastUsedText(String text, boolean isPdf) {
+        SpUtil.getInstance().putString(KEY_LAST_USED_TEXT, text);
+        SpUtil.getInstance().putBoolean(KEY_LAST_USED_IS_PDF, isPdf);
     }
 
+    /**
+     * Retrieves the last used OCR text (combined for PDF, raw for image).
+     * @return The last used OCR text.
+     */
     public static String getLastUsedText() {
-        return SpUtil.getInstance().getString(Constants.KEY_LAST_USE_IMAGE_TEXT);
+        return SpUtil.getInstance().getString(KEY_LAST_USED_TEXT, "");
+    }
+
+    /**
+     * Checks if the last used OCR result was from a PDF.
+     * @return True if the last result was a PDF, false otherwise.
+     */
+    public static boolean isLastUsedPdf() {
+        return SpUtil.getInstance().getBoolean(KEY_LAST_USED_IS_PDF, false);
+    }
+
+    /**
+     * Saves the list of individual page texts for PDF results.
+     * Uses Gson for robust serialization of List<String> to a JSON string.
+     * You will need to add 'implementation 'com.google.code.gson:gson:2.8.9'' to your app's build.gradle.
+     * @param pageTexts The list of strings, where each string is the text from a PDF page.
+     */
+    public static void putLastUsedPdfPages(List<String> pageTexts) {
+        Gson gson = new Gson();
+        String json = gson.toJson(pageTexts);
+        SpUtil.getInstance().putString(KEY_LAST_USED_PDF_PAGES, json);
+    }
+
+    /**
+     * Retrieves the list of individual page texts for PDF results.
+     * Uses Gson for deserialization from a JSON string back to List<String>.
+     * @return A List<String> containing individual page texts, or an empty list if none found.
+     */
+    public static List<String> getLastUsedPdfPages() {
+        Gson gson = new Gson();
+        String json = SpUtil.getInstance().getString(KEY_LAST_USED_PDF_PAGES, "");
+        if (json.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Type type = new TypeToken<List<String>>() {}.getType();
+        return gson.fromJson(json, type);
     }
 
     public static Set<Language> getTrainingDataLanguages(Context context) {

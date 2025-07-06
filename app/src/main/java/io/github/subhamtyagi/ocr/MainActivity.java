@@ -65,6 +65,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays; // Added for conceptual Utils.java List<String> serialization
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -78,7 +79,7 @@ import java.util.stream.Collectors;
 import io.github.subhamtyagi.ocr.ocr.ImageTextReader;
 import io.github.subhamtyagi.ocr.utils.Constants;
 import io.github.subhamtyagi.ocr.utils.Language;
-import io.github.subhamtyagi.ocr.utils.SpUtil;
+import io.github.subhamtyagi.ocr.utils.SpUtil; // Assuming SpUtil is available and handles SharedPreferences
 import io.github.subhamtyagi.ocr.utils.Utils;
 
 public class MainActivity extends AppCompatActivity implements TessBaseAPI.ProgressNotifier {
@@ -603,8 +604,24 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             Log.d(TAG, "Options menu: Settings selected, launching SettingsActivity via launcher.");
             return true;
         } else if (id == R.id.action_history) {
-            showOCRResult(Utils.getLastUsedText());
-            Log.d(TAG, "Options menu: History selected, showing last used text.");
+            // FIX START: Check if the last used text was a PDF or single image and display accordingly
+            if (Utils.isLastUsedPdf()) { // This method needs to be added to Utils.java
+                List<String> pdfPageTexts = Utils.getLastUsedPdfPages(); // This method needs to be added to Utils.java
+                if (pdfPageTexts != null && !pdfPageTexts.isEmpty()) {
+                    showOCRResult(pdfPageTexts);
+                    Log.d(TAG, "Options menu: History selected, showing last used PDF page texts.");
+                } else {
+                    // Fallback if PDF pages are somehow null/empty but isLastUsedPdf is true
+                    // This might happen if the PDF pages were not saved correctly.
+                    // For now, show the combined text as a fallback.
+                    showOCRResult(Utils.getLastUsedText());
+                    Log.d(TAG, "Options menu: History selected, but PDF pages empty. Showing combined text.");
+                }
+            } else {
+                showOCRResult(Utils.getLastUsedText());
+                Log.d(TAG, "Options menu: History selected, showing last used single image text.");
+            }
+            // FIX END
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -660,6 +677,8 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             BottomSheetResultsFragment bottomSheetResultsFragment = BottomSheetResultsFragment.newInstance(text);
             bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
             Log.d(TAG, "showOCRResult (single text): Bottom sheet result fragment shown.");
+            // FIX: Indicate that the last result was NOT a PDF
+            Utils.putLastUsedText(text, false); // This method needs to be modified in Utils.java
             showSaveTextDialog(text);
         } else {
             Log.d(TAG, "showOCRResult (single text): Activity not in RESUMED state, not showing bottom sheet.");
@@ -679,9 +698,10 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
             Log.d(TAG, "showOCRResult (multi-page PDF): Bottom sheet result fragment shown.");
 
-            // Integrating friend's fix: Save the extracted PDF text as the last used text.
-            Utils.putLastUsedText(combinedText);
-            Log.d(TAG, "Saved full PDF text to history.");
+            // FIX: Save the extracted PDF text as the last used text AND the individual pages.
+            Utils.putLastUsedText(combinedText, true); // This method needs to be modified in Utils.java
+            Utils.putLastUsedPdfPages(pageTexts); // This new method needs to be added to Utils.java
+            Log.d(TAG, "Saved full PDF text and individual pages to history.");
 
             showSaveTextDialog(combinedText);
         } else {
@@ -1066,7 +1086,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 showOCRResult(finalCleanText);
                 Toast.makeText(MainActivity.this, "With Confidence: " + accuracy + "%", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "OCR Result shown. Confidence: " + accuracy + "%");
-                Utils.putLastUsedText(finalCleanText);
+                // FIX: Indicate that the last result was NOT a PDF
+                Utils.putLastUsedText(finalCleanText, false); // This method needs to be modified in Utils.java
+                // Utils.putLastUsedPdfPages(new ArrayList<>()); // Clear PDF pages if last was single image (optional)
                 updateImageView();
             });
         }

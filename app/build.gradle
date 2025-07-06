@@ -100,6 +100,8 @@ dependencies {
     // NEW: Lifecycle Runtime dependency (for Lifecycle.State)
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.0' // Or the latest stable version
 
+    implementation 'com.google.code.gson:gson:2.8.9' // Or the latest stable version
+
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 
 }
