@@ -522,6 +522,9 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         Log.d(TAG, "selectImage: Launching image cropping activity.");
         CropImageOptions options = new CropImageOptions();
         options.guidelines = CropImageView.Guidelines.ON;
+        // FIX START: Disable the flip feature
+        options.allowFlipping = false;
+        // FIX END
         cropImageLauncher.launch(new CropImageContractOptions(null, options));
     }
 
