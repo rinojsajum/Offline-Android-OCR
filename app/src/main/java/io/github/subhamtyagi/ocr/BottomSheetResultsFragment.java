@@ -40,8 +40,15 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
     private List<String> pageTexts; // Holds individual page texts for PDF display
     private LinearLayout containerLayout; // The LinearLayout inside the ScrollView to hold page views
 
+    private OnPageSelectedListener pageSelectedListener;
+
+
     public BottomSheetResultsFragment() {
         // Required empty public constructor
+    }
+
+    public interface OnPageSelectedListener {
+        void onPageSelected(int pageIndex, String pageContent);
     }
 
     public static BottomSheetResultsFragment newInstance(String text) {
@@ -73,6 +80,14 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
             Log.w(TAG, "onCreate: No arguments received for BottomSheetResultsFragment.");
         }
     }
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof OnPageSelectedListener) {
+            pageSelectedListener = (OnPageSelectedListener) context;
+        }
+    }
+
 
     @Nullable
     @Override
@@ -93,17 +108,14 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
         MaterialButton btnCopy = view.findViewById(R.id.btn_copy);
         MaterialButton btnShare = view.findViewById(R.id.btn_share);
 
-        // --- FIX START ---
-        // Declare a final local variable to hold the text that will be used by the buttons
         final String textForButtons;
-        // --- FIX END ---
 
         if (pageTexts != null && !pageTexts.isEmpty()) {
             Log.d(TAG, "Displaying PDF results with " + pageTexts.size() + " pages.");
             StringBuilder fullTextForActions = new StringBuilder();
 
             for (int i = 0; i < pageTexts.size(); i++) {
-                String currentPageText = pageTexts.get(i);
+                final String currentPageText = pageTexts.get(i);
 
                 LinearLayout pageViewContainer = new LinearLayout(getContext());
                 pageViewContainer.setOrientation(LinearLayout.VERTICAL);
@@ -111,11 +123,9 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
                 );
-                // Using page_bottom_margin from dimens.xml
                 containerParams.setMargins(0, 0, 0, (int) getResources().getDimension(R.dimen.page_bottom_margin));
                 pageViewContainer.setLayoutParams(containerParams);
                 pageViewContainer.setBackgroundResource(R.drawable.page_background);
-                // Using page_padding from dimens.xml
                 pageViewContainer.setPadding(
                         (int) getResources().getDimension(R.dimen.page_padding),
                         (int) getResources().getDimension(R.dimen.page_padding),
@@ -125,14 +135,11 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                 pageViewContainer.setFocusable(true);
                 pageViewContainer.setFocusableInTouchMode(true);
                 pageViewContainer.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-                pageViewContainer.setContentDescription(getString(R.string.pdf_page_content_description, i + 1));
-
+                pageViewContainer.setContentDescription(getString(R.string.pdf_page_full_readout_description, i + 1, Html.fromHtml(currentPageText)));
 
                 TextView pageLabel = new TextView(getContext());
                 pageLabel.setText(getString(R.string.pdf_page_label, i + 1));
-                // Using MaterialComponents text appearance
                 pageLabel.setTextAppearance(getContext(), com.google.android.material.R.style.TextAppearance_MaterialComponents_Subtitle1);
-                // Using text_margin_small from dimens.xml
                 pageLabel.setPadding(0, 0, 0, (int) getResources().getDimension(R.dimen.text_margin_small));
                 pageLabel.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
                 pageViewContainer.addView(pageLabel);
@@ -149,9 +156,8 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                 fullTextForActions.append("--- Page ").append(i + 1).append(" ---\n")
                         .append(currentPageText).append("\n\n");
             }
-            // --- FIX START ---
-            textForButtons = fullTextForActions.toString().trim(); // Assign value to the final local variable
-            // --- FIX END ---
+
+            textForButtons = fullTextForActions.toString().trim();
         } else if (singleText != null && !singleText.isEmpty()) {
             Log.d(TAG, "Displaying single image OCR result.");
             TextView ocrResultTextView = new TextView(getContext());
@@ -159,27 +165,21 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
             ocrResultTextView.setMovementMethod(LinkMovementMethod.getInstance());
             ocrResultTextView.setTextIsSelectable(true);
             ocrResultTextView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-            ocrResultTextView.setContentDescription(getString(R.string.ocr_result_content_description));
+            ocrResultTextView.setContentDescription(getString(R.string.ocr_result_content_description_full, Html.fromHtml(singleText).toString()));
             containerLayout.addView(ocrResultTextView);
-            // --- FIX START ---
-            textForButtons = singleText; // Assign value to the final local variable
-            // --- FIX END ---
+
+            textForButtons = singleText;
         } else {
             Log.w(TAG, "No text data found for display in bottom sheet (neither single text nor page list).");
             TextView noResultTextView = new TextView(getContext());
             noResultTextView.setText(R.string.no_text_found);
             noResultTextView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
             containerLayout.addView(noResultTextView);
-            // --- FIX START ---
-            textForButtons = ""; // Assign a default value (empty string)
-            // --- FIX END ---
+
+            textForButtons = "";
         }
 
-        // --- FIX START ---
-        // Call setupButtons with the final local variable
         setupButtons(textForButtons, btnCopy, btnShare);
-        // --- FIX END ---
-
         return view;
     }
 

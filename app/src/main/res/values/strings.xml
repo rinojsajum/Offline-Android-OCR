@@ -97,4 +97,8 @@
     <string name="ocr_result_content_description">OCR recognized text result</string>
     <string name="ocr_text_container_desc">OCR Recognized Text Content</string>
 
+    <string name="pdf_page_full_readout_description">Page %1$d: %2$s</string>
+    <string name="ocr_result_content_description_full">%1$s</string>
+
+
 </resources>

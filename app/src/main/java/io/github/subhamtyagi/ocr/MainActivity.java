@@ -1,6 +1,22 @@
 package io.github.subhamtyagi.ocr;
 
 import android.animation.AnimatorListenerAdapter;
+import android.view.accessibility.AccessibilityEvent;
+import android.accessibilityservice.AccessibilityServiceInfo;
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityManager;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.googlecode.tesseract.android.TessBaseAPI;
+
+import java.util.List;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -81,7 +97,7 @@ import io.github.subhamtyagi.ocr.utils.Language;
 import io.github.subhamtyagi.ocr.utils.SpUtil;
 import io.github.subhamtyagi.ocr.utils.Utils;
 
-public class MainActivity extends AppCompatActivity implements TessBaseAPI.ProgressNotifier {
+public class MainActivity extends AppCompatActivity implements TessBaseAPI.ProgressNotifier, BottomSheetResultsFragment.OnPageSelectedListener {
 
     public static final String TAG = "MainActivity";
     private static boolean isRefresh = false;
@@ -611,6 +627,22 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
     }
 
     @Override
+    public void onPageSelected(int pageIndex, String pageContent) {
+        AccessibilityManager accessibilityManager = (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
+        if (accessibilityManager != null && accessibilityManager.isEnabled()) {
+            AccessibilityEvent event = AccessibilityEvent.obtain(AccessibilityEvent.TYPE_ANNOUNCEMENT);
+            event.setClassName(getClass().getName());
+            event.setPackageName(getPackageName());
+            event.getText().add("Page " + (pageIndex + 1) + ": " + pageContent);
+            accessibilityManager.sendAccessibilityEvent(event);
+
+            Log.d(TAG, "TalkBack announcement sent for page " + (pageIndex + 1));
+        } else {
+            Log.w(TAG, "AccessibilityManager not available or not enabled.");
+        }
+    }
+
+    @Override
     public void onProgressValues(final TessBaseAPI.ProgressValues progressValues) {
         int progress = (int) (progressValues.getPercent() * 1.46);
         runOnUiThread(() -> {
@@ -665,6 +697,8 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             Log.d(TAG, "showOCRResult (single text): Activity not in RESUMED state, not showing bottom sheet.");
         }
     }
+
+
 
     public void showOCRResult(List<String> pageTexts) {
         if (this.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
