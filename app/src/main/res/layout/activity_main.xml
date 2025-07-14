@@ -73,6 +73,78 @@
 
     </LinearLayout>
 
+    <!-- Buttons Layout: Evenly spaced with first at left and last at right -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <!-- Camera Button (first, aligned left) -->
+        <!-- Margin from left edge -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btn_camera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Take Photo with Camera"
+            app:srcCompat="@drawable/ic_baseline_camera_alt_24" />
+
+        <!-- Spacer 1 (pushes content to the right) -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- Gallery Button (second) -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btn_scan"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Select Image from Gallery"
+            app:srcCompat="@drawable/ic_baseline_photo_library_24" />
+
+        <!-- Spacer 2 (pushes content to the right) -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- PDF Button (third) -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btn_pdf"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="PDF"
+            app:srcCompat="@drawable/ic_pdf" />
+
+        <!-- Spacer 3 (pushes content to the right, aligning last button) -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- Saved Files Button (fourth, aligned right) -->
+        <!-- Margin from right edge -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btn_saved_files"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Access saved OCR files"
+            app:srcCompat="@drawable/ic_baseline_folder_open_24" />
+    </LinearLayout>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -91,41 +163,6 @@
                 tools:src="@tools:sample/backgrounds/scenic" />
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:orientation="horizontal"
-            android:layout_margin="16dp">
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/btn_saved_files"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:clickable="true"
-                android:contentDescription="Access saved OCR files"
-                android:focusable="true"
-                app:srcCompat="@drawable/ic_baseline_folder_open_24" />
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/btn_pdf"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:contentDescription="PDF"
-                app:srcCompat="@drawable/ic_pdf" />
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/btn_scan"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                android:focusable="true"
-                android:contentDescription="Select Image"
-                app:srcCompat="@drawable/ic_baseline_photo_library_24" />
-        </LinearLayout>
 
     </FrameLayout>
 </LinearLayout>

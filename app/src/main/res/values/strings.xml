@@ -93,7 +93,7 @@
     <string name="no_text_to_share">No text to share</string>
     <string name="ocr_results_scroll_view_desc">OCR Results. Scrollable content.</string>
     <string name="pdf_page_content_description">PDF Page %d content.</string>
-    <string name="copy">Copy</string>
+    <string name="copy">Copy to clipboard</string>
     <string name="ocr_result_content_description">OCR recognized text result</string>
     <string name="ocr_text_container_desc">OCR Recognized Text Content</string>
 

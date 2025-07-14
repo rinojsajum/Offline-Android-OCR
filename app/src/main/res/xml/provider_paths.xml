@@ -6,7 +6,15 @@
         name="ocr_public_results_folder"
         path="Documents/OCR_Results/" />
 
-    <!-- This is the NEW path needed to fix the camera/cropper crash. -->
+    <!-- NEW: This path is needed to allow FileProvider to access files
+         created by createImageFile() in getExternalFilesDir(Environment.DIRECTORY_PICTURES).
+         The 'path="."' grants access to the root of your app's external files directory,
+         which includes subdirectories like 'Pictures'. -->
+    <external-files-path
+        name="my_images"
+        path="." />
+
+    <!-- Your existing cache path, if still needed for other purposes -->
     <cache-path
         name="external_cache"
         path="." />
