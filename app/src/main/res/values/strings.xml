@@ -65,11 +65,11 @@
     <string name="advance_setting_summary">Functions related to image processing</string>
     <string name="image_enhancement">Image Enhancement</string>
     <string name="languages">Languages</string>
-    <string name="select_multi_training_data_title">Select languages for Tesseract</string>
+    <string name="select_multi_training_data_title">Select languages</string>
     <string name="multiple_lang_summary">Training data languages</string>
     <string name="select_multi_languages_title">Select languages</string>
     <string name="image_processing_functions">Image processing functions</string>
-    <string name="advance_tesseract_settings">Advance Tesseract Settings</string>
+    <string name="advance_tesseract_settings">Advance Settings</string>
     <string name="psm_summary">It directs how Tesseract splits image in lines of text and words.</string>
     <string name="selected_language">Selected Language(s):</string>
     <string name="what_language_this_image_have">Which language is used in the image\?</string>

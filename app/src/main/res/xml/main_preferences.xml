@@ -42,24 +42,6 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/advance_tesseract_settings">
-        <SwitchPreference
-            android:defaultValue="false"
-            android:icon="@drawable/ic_baseline_filter_32"
-            android:key="key_advance_tess_option"
-            android:summary="Advance tesseract option. Used with caution; only use these option if you know what are you doing"
-            android:title="Set Tesseract variable/parameter" />
-            
-            <PreferenceScreen
-            android:fragment="io.github.subhamtyagi.ocr.SettingsActivity$VariableSettingsFragment"
-            android:icon="@drawable/ic_baseline_functions_32"
-            android:summary="Set tesseract parameters"
-            android:title="Tesseract variable/parameter"
-            app:dependency="key_advance_tess_option" />
-            
-        
-    </PreferenceCategory>
-
     <PreferenceCategory android:title="@string/image_enhancement">
         <SwitchPreference
             android:defaultValue="true"
@@ -91,14 +73,6 @@
         android:icon="@drawable/ic_baseline_info_16"
         android:title="About">
 
-        <Preference
-            android:icon="@drawable/ic_baseline_source_32"
-            android:summary="@string/open_source_statement"
-            android:title="@string/source_code">
-            <intent
-                android:action="android.intent.action.VIEW"
-                android:data="@string/github_url" />
-        </Preference>
     </PreferenceCategory>
 
 
