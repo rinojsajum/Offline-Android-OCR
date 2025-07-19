@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- various key to store the setting values -->
+    <string name="key_enable_cropping">key_enable_cropping</string>
     <string name="pref_title_language">OCR Language</string>
     <string name="pref_summary_language">Select the language for text recognition</string>
     <string name="key_language_for_tesseract" translatable="false">language_for_tesseract</string>

@@ -15,7 +15,6 @@
   -->
 
 <PreferenceScreen
-
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -31,7 +30,6 @@
             app:icon="@drawable/ic_baseline_more_horiz_32" />
 
         <MultiSelectListPreference
-
             android:entries="@array/ocr_engine_language"
             android:entryValues="@array/key_ocr_engine_language_value"
             android:key="@string/key_language_for_tesseract_multi"
@@ -39,10 +37,18 @@
             android:title="@string/select_multi_training_data_title"
             app:icon="@drawable/ic_baseline_language_32" />
 
-
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/image_enhancement">
+
+        <!-- ADD THIS BLOCK FOR THE CROPPING TOGGLE -->
+        <SwitchPreference
+            android:key="@string/key_enable_cropping"
+            android:title="Enable Image Cropping"
+            android:summary="If enabled, you can crop the image before OCR"
+            android:defaultValue="false"
+            android:icon="@drawable/ic_baseline_crop_32" />
+
         <SwitchPreference
             android:defaultValue="true"
             android:icon="@drawable/ic_baseline_filter_32"
@@ -74,6 +80,5 @@
         android:title="About">
 
     </PreferenceCategory>
-
 
 </PreferenceScreen>
