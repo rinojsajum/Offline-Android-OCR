@@ -15,8 +15,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.accessibility.AccessibilityEvent; // Friend's addition
-import android.view.accessibility.AccessibilityManager; // Friend's addition
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityManager;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -24,11 +24,11 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.ViewCompat; // Your addition for nested scrolling
+import androidx.core.view.ViewCompat; // Added for nested scrolling
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
-import com.googlecode.tesseract.android.TessBaseAPI; // Friend's addition
+import com.googlecode.tesseract.android.TessBaseAPI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -155,14 +155,16 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
                 );
-                containerParams.setMargins(0, 0, 0, (int) getResources().getDimension(R.d.page_bottom_margin));
+                // FIX: Changed R.d.page_bottom_margin to R.dimen.page_bottom_margin
+                containerParams.setMargins(0, 0, 0, (int) getResources().getDimension(R.dimen.page_bottom_margin));
                 pageViewContainer.setLayoutParams(containerParams);
                 pageViewContainer.setBackgroundResource(R.drawable.page_background);
                 pageViewContainer.setPadding(
-                        (int) getResources().getDimension(R.d.page_padding),
-                        (int) getResources().getDimension(R.d.page_padding),
-                        (int) getResources().getDimension(R.d.page_padding),
-                        (int) getResources().getDimension(R.d.page_padding)
+                        // FIX: Changed R.d.page_padding to R.dimen.page_padding
+                        (int) getResources().getDimension(R.dimen.page_padding),
+                        (int) getResources().getDimension(R.dimen.page_padding),
+                        (int) getResources().getDimension(R.dimen.page_padding),
+                        (int) getResources().getDimension(R.dimen.page_padding)
                 );
                 pageViewContainer.setFocusable(true);
                 pageViewContainer.setFocusableInTouchMode(true);
@@ -181,7 +183,8 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                 // Use pageIndex from friend's fix
                 pageLabel.setText(getString(R.string.pdf_page_label, pageIndex + 1));
                 pageLabel.setTextAppearance(getContext(), com.google.android.material.R.style.TextAppearance_MaterialComponents_Subtitle1);
-                pageLabel.setPadding(0, 0, 0, (int) getResources().getDimension(R.d.text_margin_small));
+                // FIX: Changed R.d.text_margin_small to R.dimen.text_margin_small
+                pageLabel.setPadding(0, 0, 0, (int) getResources().getDimension(R.dimen.text_margin_small));
                 pageLabel.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
                 pageViewContainer.addView(pageLabel);
 
@@ -220,7 +223,8 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
 
             // Friend's addition for accessibility announcement on click
             containerLayout.setOnClickListener(v -> {
-                AccessibilityManager am = (AccessibilityManager) requireContext().getSystemService(Context.ACCBILITY_SERVICE);
+                // FIX: Changed ACCBILITY_SERVICE to ACCESSIBILITY_SERVICE
+                AccessibilityManager am = (AccessibilityManager) requireContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
                 if (am != null && am.isEnabled()) {
                     AccessibilityEvent event = AccessibilityEvent.obtain(AccessibilityEvent.TYPE_ANNOUNCEMENT);
                     event.getText().add(cleanText);
