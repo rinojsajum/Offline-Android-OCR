@@ -1,0 +1,14 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background circle -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF"/> <!-- Change to your FAB color -->
+            <size android:width="48dp" android:height="48dp"/>
+        </shape>
+    </item>
+
+    <!-- Icon on top -->
+    <item
+        android:drawable="@drawable/ic_baseline_history_24"
+        android:gravity="center"/>
+</layer-list>

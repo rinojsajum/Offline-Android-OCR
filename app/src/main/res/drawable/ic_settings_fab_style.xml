@@ -1,0 +1,12 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF"/>
+            <size android:width="48dp" android:height="48dp"/>
+        </shape>
+    </item>
+    <item
+        android:drawable="@drawable/ic_baseline_settings_white_24dp"
+        android:gravity="center"/>
+</layer-list>
+
