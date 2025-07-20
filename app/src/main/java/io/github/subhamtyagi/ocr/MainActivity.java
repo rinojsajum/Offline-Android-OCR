@@ -1,13 +1,9 @@
 package io.github.subhamtyagi.ocr;
 
-import android.animation.AnimatorListenerAdapter;
 import android.view.accessibility.AccessibilityEvent;
-import android.accessibilityservice.AccessibilityServiceInfo;
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 
 import androidx.annotation.Nullable;
@@ -19,7 +15,7 @@ import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
+import android.content.SharedPreferences; // *** ADDED IMPORT ***
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -34,7 +30,6 @@ import android.graphics.drawable.Drawable;
 import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -42,7 +37,6 @@ import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.text.Html;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -56,12 +50,11 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider; // Added for FileProvider support
+import androidx.core.content.FileProvider;
 import androidx.lifecycle.Lifecycle;
+import androidx.preference.PreferenceManager; // *** ADDED IMPORT ***
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.canhub.cropper.CropImageContract;
@@ -70,7 +63,6 @@ import com.canhub.cropper.CropImageOptions;
 import com.canhub.cropper.CropImageView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
-import com.googlecode.tesseract.android.TessBaseAPI;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -83,10 +75,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -100,7 +90,8 @@ import io.github.subhamtyagi.ocr.utils.Language;
 import io.github.subhamtyagi.ocr.utils.SpUtil;
 import io.github.subhamtyagi.ocr.utils.Utils;
 
-public class MainActivity extends AppCompatActivity implements TessBaseAPI.ProgressNotifier, BottomSheetResultsFragment.OnPageSelectedListener {
+public class MainActivity extends AppCompatActivity implements BottomSheetResultsFragment.OnPageSelectedListener, TessBaseAPI.ProgressNotifier {
+
 
     public static final String TAG = "MainActivity";
     private static boolean isRefresh = false;
@@ -203,25 +194,21 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             }
         });
 
+        // *** CHANGED: This now calls our new helper method instead of the cropper directly. ***
         galleryPickerLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
             if (uri != null) {
-                CropImageOptions options = new CropImageOptions();
-                options.guidelines = CropImageView.Guidelines.ON;
-                options.allowFlipping = false;
-                cropImageLauncher.launch(new CropImageContractOptions(uri, options));
+                startCropOrOcr(uri);
             } else {
                 Toast.makeText(this, "Image selection cancelled.", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "Gallery image selection cancelled.");
             }
         });
 
+        // *** CHANGED: This also calls our new helper method. ***
         cameraCaptureLauncher = registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
             if (success) {
                 if (cameraOutputUri != null) {
-                    CropImageOptions options = new CropImageOptions();
-                    options.guidelines = CropImageView.Guidelines.ON;
-                    options.allowFlipping = false;
-                    cropImageLauncher.launch(new CropImageContractOptions(cameraOutputUri, options));
+                    startCropOrOcr(cameraOutputUri);
                 } else {
                     Toast.makeText(this, "Camera output URI is null.", Toast.LENGTH_SHORT).show();
                     Log.e(TAG, "Camera capture successful but output URI is null.");
@@ -231,8 +218,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
                 Log.d(TAG, "Camera capture cancelled or failed.");
                 if (cameraOutputUri != null) {
                     try {
-                        // If using FileProvider, you should ideally use getContentResolver().delete(cameraOutputUri, null, null);
-                        // However, direct file deletion is used here for simplicity and to adhere to constraints.
                         File file = new File(cameraOutputUri.getPath());
                         if (file.exists()) {
                             file.delete();
@@ -304,6 +289,35 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         initializeOCR();
         initViews();
     }
+
+    // *** ADDED: THIS IS THE CRITICAL LOGIC THAT CHECKS THE SETTING ***
+    private void startCropOrOcr(Uri imageUri) {
+        if (imageUri == null) {
+            Log.e(TAG, "Image URI is null, cannot proceed.");
+            Toast.makeText(this, "Failed to get image URI.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 1. Get SharedPreferences to read the setting value
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+        // 2. Read the value of our "Enable Cropping" setting. Default to 'false' if not found.
+        boolean isCroppingEnabled = prefs.getBoolean(getString(R.string.key_enable_cropping), false);
+
+        if (isCroppingEnabled) {
+            // 3a. If cropping is ON, launch the crop activity as before
+            Log.d(TAG, "Cropping is enabled. Launching crop activity.");
+            CropImageOptions options = new CropImageOptions();
+            options.guidelines = CropImageView.Guidelines.ON;
+            options.allowFlipping = false;
+            cropImageLauncher.launch(new CropImageContractOptions(imageUri, options));
+        } else {
+            // 3b. If cropping is OFF, skip cropping and go directly to OCR
+            Log.d(TAG, "Cropping is disabled. Skipping to OCR.");
+            convertImageToText(imageUri);
+        }
+    }
+
 
     private void initViews() {
         Log.d(TAG, "initViews: Initializing UI elements and listeners.");
@@ -644,9 +658,7 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
             Log.d(TAG, "Bitmap loaded from URI. Dimensions: " + (bitmap != null ? bitmap.getWidth() + "x" + bitmap.getHeight() : "null"));
         } catch (IOException e) {
             Log.e(TAG, "convertImageToText: Failed to get bitmap from URI: " + e.getLocalizedMessage(), e);
-            // FIX START: Corrected the nested Toast.makeText call
             Toast.makeText(this, "Failed to load image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            // FIX END
         }
         if (bitmap != null) {
             mImageView.setImageURI(imageUri);
@@ -689,8 +701,6 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         }
         if (cameraOutputUri != null) {
             try {
-                // If using FileProvider, you should ideally use getContentResolver().delete(cameraOutputUri, null, null);
-                // Direct file deletion is used here for simplicity and to adhere to constraints.
                 File file = new File(cameraOutputUri.getPath());
                 if (file.exists()) {
                     file.delete();

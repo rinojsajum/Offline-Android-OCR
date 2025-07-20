@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- various key to store the setting values -->
+    <string name="key_enable_cropping">key_enable_cropping</string>
     <string name="pref_title_language">OCR Language</string>
     <string name="pref_summary_language">Select the language for text recognition</string>
     <string name="key_language_for_tesseract" translatable="false">language_for_tesseract</string>
@@ -95,7 +96,14 @@
     <string name="pdf_page_content_description">PDF Page %d content.</string>
     <string name="copy">Copy to clipboard</string>
     <string name="ocr_result_content_description">OCR recognized text result</string>
-    <string name="ocr_text_container_desc">OCR Recognized Text Content</string>
+    <string name="ocr_text_container_desc">OCR recognized text content: %1$s</string>
+    <string name="pdf_page_number_only_description">Page %1$d</string>
+    <string name="pdf_page_number_hint">Page %1$d. Double tap to read content.</string>
+    <string name="tap_to_read_pdf_page_content">Page %1$d. Double tap to read content.</string>
+    <string name="pdf_page_single_tap_announcement">Page %1$d. Double tap to read content.</string>
+
+
+
 
     <string name="pdf_page_full_readout_description">Page %1$d: %2$s</string>
     <string name="ocr_result_content_description_full">%1$s</string>
