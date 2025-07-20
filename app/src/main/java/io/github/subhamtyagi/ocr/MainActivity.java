@@ -1,14 +1,9 @@
-// COPY THE ENTIRE FILE FROM HERE
 package io.github.subhamtyagi.ocr;
 
-import android.animation.AnimatorListenerAdapter;
 import android.view.accessibility.AccessibilityEvent;
-import android.accessibilityservice.AccessibilityServiceInfo;
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 
 import androidx.annotation.Nullable;
@@ -20,7 +15,6 @@ import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences; // *** ADDED IMPORT ***
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -36,7 +30,6 @@ import android.graphics.drawable.Drawable;
 import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -44,7 +37,6 @@ import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.text.Html;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -58,10 +50,8 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager; // *** ADDED IMPORT ***
@@ -73,7 +63,6 @@ import com.canhub.cropper.CropImageOptions;
 import com.canhub.cropper.CropImageView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
-import com.googlecode.tesseract.android.TessBaseAPI;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -86,10 +75,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -103,7 +90,8 @@ import io.github.subhamtyagi.ocr.utils.Language;
 import io.github.subhamtyagi.ocr.utils.SpUtil;
 import io.github.subhamtyagi.ocr.utils.Utils;
 
-public class MainActivity extends AppCompatActivity implements TessBaseAPI.ProgressNotifier, BottomSheetResultsFragment.OnPageSelectedListener {
+public class MainActivity extends AppCompatActivity implements BottomSheetResultsFragment.OnPageSelectedListener, TessBaseAPI.ProgressNotifier {
+
 
     public static final String TAG = "MainActivity";
     private static boolean isRefresh = false;
@@ -1409,4 +1397,3 @@ public class MainActivity extends AppCompatActivity implements TessBaseAPI.Progr
         }
     }
 }
-// END OF FILE
