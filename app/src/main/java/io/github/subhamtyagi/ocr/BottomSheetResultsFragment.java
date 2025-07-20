@@ -1,4 +1,3 @@
-// BottomSheetResultsFragment.java
 package io.github.subhamtyagi.ocr;
 
 import android.app.Dialog;
@@ -23,6 +22,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat; // Added for nested scrolling
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
@@ -39,6 +39,8 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
     private String singleText; // Holds single image text OR concatenated PDF text
     private List<String> pageTexts; // Holds individual page texts for PDF display
     private LinearLayout containerLayout; // The LinearLayout inside the ScrollView to hold page views
+    private ScrollView scrollView; // Reference to the ScrollView
+    private BottomSheetBehavior<View> bottomSheetBehavior; // Reference to the BottomSheetBehavior
 
     private OnPageSelectedListener pageSelectedListener;
 
@@ -96,11 +98,14 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
         Log.d(TAG, "onCreateView: Layout inflated.");
 
         containerLayout = view.findViewById(R.id.text_content_container);
-        ScrollView scrollView = view.findViewById(R.id.scroll_view_results);
+        scrollView = view.findViewById(R.id.scroll_view_results); // Assign to class member
 
         if (scrollView != null) {
             scrollView.setContentDescription(getString(R.string.ocr_results_scroll_view_desc));
             scrollView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+            // Explicitly enable nested scrolling for the ScrollView
+            ViewCompat.setNestedScrollingEnabled(scrollView, true);
+            Log.d(TAG, "ScrollView found and nested scrolling enabled.");
         } else {
             Log.e(TAG, "ScrollView with ID 'scroll_view_results' not found in layout!");
         }
@@ -226,8 +231,45 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                 layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
                 bottomSheet.setLayoutParams(layoutParams);
 
-                BottomSheetBehavior<View> behavior = BottomSheetBehavior.from(bottomSheet);
-                behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet); // Assign to class member
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+
+                // Add a callback to log state changes (for debugging)
+                bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+                    @Override
+                    public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                        String stateName;
+                        switch (newState) {
+                            case BottomSheetBehavior.STATE_COLLAPSED:
+                                stateName = "COLLAPSED";
+                                break;
+                            case BottomSheetBehavior.STATE_EXPANDED:
+                                stateName = "EXPANDED";
+                                break;
+                            case BottomSheetBehavior.STATE_DRAGGING:
+                                stateName = "DRAGGING";
+                                break;
+                            case BottomSheetBehavior.STATE_SETTLING:
+                                stateName = "SETTLING";
+                                break;
+                            case BottomSheetBehavior.STATE_HIDDEN:
+                                stateName = "HIDDEN";
+                                break;
+                            case BottomSheetBehavior.STATE_HALF_EXPANDED:
+                                stateName = "HALF_EXPANDED";
+                                break;
+                            default:
+                                stateName = "UNKNOWN";
+                                break;
+                        }
+                        Log.d(TAG, "BottomSheet State Changed: " + stateName);
+                    }
+
+                    @Override
+                    public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                        // Log.d(TAG, "BottomSheet Sliding: " + slideOffset);
+                    }
+                });
             }
         }
     }
@@ -236,9 +278,6 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         if (containerLayout != null) {
-            // --- FIX START ---
-            // Declare the local variable as final and assign it immediately
-            // based on the conditions. This ensures it's effectively final.
             final View contentToFocus;
 
             if (pageTexts != null && !pageTexts.isEmpty()) {
@@ -246,7 +285,6 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
             } else if (singleText != null && !singleText.isEmpty()) {
                 contentToFocus = containerLayout.getChildAt(0);
             } else {
-                // Ensure contentToFocus is always assigned a value, even if null.
                 contentToFocus = null;
             }
 
@@ -255,7 +293,6 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                     contentToFocus.sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
                 });
             }
-            // --- FIX END ---
         }
     }
 

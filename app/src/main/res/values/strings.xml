@@ -84,7 +84,7 @@
     <string name="processing_image">Processing image</string>
     <string name="processing_completed">Processing completed</string>
     <string name="recognizing_text">Recognizing text</string>
-
+    <string name="ocr_results_title">OCR Results</string>
     <string name="ocr_results">OCR Results</string>
     <string name="pdf_page_label">Page %d</string>
     <string name="no_text_found">No text found.</string>

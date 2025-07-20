@@ -92,7 +92,9 @@
                 android:layout_width="70dp"
                 android:layout_height="70dp"
                 android:contentDescription="Open Camera"
-                app:srcCompat="@drawable/ic_baseline_camera_alt_24" />
+                app:srcCompat="@drawable/ic_baseline_camera_alt_24"
+                app:maxImageSize="56dp"
+                app:fabCustomSize="70dp" /> <!-- ADDED: Custom FAB size for correct centering -->
 
             <TextView
                 android:layout_width="wrap_content"
@@ -114,7 +116,9 @@
                 android:layout_width="70dp"
                 android:layout_height="70dp"
                 android:contentDescription="Open Gallery"
-                app:srcCompat="@drawable/ic_baseline_photo_library_24" />
+                app:srcCompat="@drawable/ic_baseline_photo_library_24"
+                app:maxImageSize="56dp"
+                app:fabCustomSize="70dp" /> <!-- ADDED: Custom FAB size for correct centering -->
 
             <TextView
                 android:layout_width="wrap_content"
@@ -136,7 +140,9 @@
                 android:layout_width="70dp"
                 android:layout_height="70dp"
                 android:contentDescription="Open PDF"
-                app:srcCompat="@drawable/ic_pdf" />
+                app:srcCompat="@drawable/ic_pdf"
+                app:maxImageSize="56dp"
+                app:fabCustomSize="70dp" /> <!-- ADDED: Custom FAB size for correct centering -->
 
             <TextView
                 android:layout_width="wrap_content"
@@ -159,7 +165,8 @@
                 android:layout_height="70dp"
                 android:contentDescription="Open Saved Files"
                 app:srcCompat="@drawable/ic_baseline_folder_open_24"
-                android:scaleType="centerInside"/>
+                app:maxImageSize="56dp"
+                app:fabCustomSize="70dp" /> <!-- ADDED: Custom FAB size for correct centering -->
 
             <TextView
                 android:layout_width="wrap_content"

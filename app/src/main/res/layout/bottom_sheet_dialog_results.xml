@@ -1,18 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Root view remains RelativeLayout as per your choice -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/colorBackground"> <!-- Added background from previous suggestion -->
+    android:background="?android:attr/colorBackground">
 
     <!-- Title for the bottom sheet, placed at the top -->
     <TextView
         android:id="@+id/bottom_sheet_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/ocr_results"
+        android:text="@string/ocr_results_title"
         android:textAppearance="?attr/textAppearanceHeadline6"
         android:gravity="center_horizontal"
         android:paddingTop="16dp"
@@ -37,7 +36,7 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:text="@string/copy_to_clipboard"
-            app:icon="@drawable/ic_copy" /> <!-- Using ic_copy as discussed, assuming it's available -->
+            app:icon="@drawable/ic_copy" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_share"
@@ -47,7 +46,7 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:text="@string/share"
-            app:icon="@drawable/ic_share" /> <!-- Using ic_share as discussed, assuming it's available -->
+            app:icon="@drawable/ic_share" />
     </LinearLayout>
 
     <!-- ScrollView positioned between the title and the button container -->
