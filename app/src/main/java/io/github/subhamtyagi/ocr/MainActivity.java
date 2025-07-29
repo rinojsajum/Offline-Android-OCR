@@ -15,7 +15,7 @@ import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.SharedPreferences; // *** ADDED IMPORT ***
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -54,7 +54,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.Lifecycle;
-import androidx.preference.PreferenceManager; // *** ADDED IMPORT ***
+import androidx.preference.PreferenceManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.canhub.cropper.CropImageContract;
@@ -174,6 +174,8 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     Log.d(TAG, "Returned from settings. Re-initializing OCR.");
+                    // This is where we return from settings.
+                    // initializeOCR() will be called, which should check for missing languages.
                     initializeOCR();
                 }
         );
@@ -194,7 +196,6 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
             }
         });
 
-        // *** CHANGED: This now calls our new helper method instead of the cropper directly. ***
         galleryPickerLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
             if (uri != null) {
                 startCropOrOcr(uri);
@@ -204,7 +205,6 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
             }
         });
 
-        // *** CHANGED: This also calls our new helper method. ***
         cameraCaptureLauncher = registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
             if (success) {
                 if (cameraOutputUri != null) {
@@ -420,7 +420,9 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
             languages = new HashSet<>();
         }
         mLanguageName.setText(languages.stream().map(Language::getName).collect(Collectors.joining(", ")));
-        Log.d(TAG, "onResume: Language name updated.");
+        // --- START DEBUG LOGGING ---
+        Log.d(TAG, "onResume: Current languages from Utils: " + languages.stream().map(Language::getCode).collect(Collectors.joining(", ")));
+        // --- END DEBUG LOGGING ---
     }
 
     private void openPdfPicker() {
@@ -457,11 +459,14 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
 
     private void initializeOCR() {
         Log.d(TAG, "initializeOCR: Initializing OCR engine.");
-        Set<Language> languages = (initialLanguages != null) ? initialLanguages : Utils.getTrainingDataLanguages(this);
-        initialLanguages = null;
+        // Always get the latest languages from Utils here
+        Set<Language> languages = Utils.getTrainingDataLanguages(this);
         if (languages == null) {
             languages = new HashSet<>();
         }
+        // --- START DEBUG LOGGING ---
+        Log.d(TAG, "initializeOCR: Languages to initialize with: " + languages.stream().map(Language::getCode).collect(Collectors.joining(", ")));
+        // --- END DEBUG LOGGING ---
 
         mTrainingDataType = Utils.getTrainingDataType();
         mPageSegMode = Utils.getPageSegMode();
@@ -481,14 +486,20 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         currentDirectory = new File(tessdataDirectory, "tessdata");
         Log.d(TAG, "Selected Tesseract data path for OCR: " + tessdataDirectory.getAbsolutePath());
 
-        if (isNoLanguagesDataMissingFromSet(languages)) {
-            startImageTextReaderThread(languages);
-            Log.d(TAG, "All language data available. Starting ImageTextReader thread.");
-        } else {
+        // --- START DEBUG LOGGING ---
+        boolean languagesMissing = !isNoLanguagesDataMissingFromSet(languages);
+        Log.d(TAG, "initializeOCR: Are languages missing? " + languagesMissing);
+        // --- END DEBUG LOGGING ---
+
+        if (!isNoLanguagesDataMissingFromSet(languages)) { // This condition checks if languages ARE missing
             downloadLanguageData(languages);
             Log.d(TAG, "Language data missing. Initiating download process.");
+        } else { // This condition means NO languages are missing
+            startImageTextReaderThread(languages);
+            Log.d(TAG, "All language data available. Starting ImageTextReader thread.");
         }
     }
+
 
     private void startImageTextReaderThread(Set<Language> languages) {
         new Thread(() -> {
@@ -550,9 +561,13 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                 missingLanguage.add(l);
             }
         }
+        // --- START DEBUG LOGGING ---
+        Log.d(TAG, "downloadLanguageData: Identified missing languages: " + missingLanguage.stream().map(Language::getCode).collect(Collectors.joining(", ")));
+        // --- END DEBUG LOGGING ---
+
         if (missingLanguage.isEmpty()) {
             Log.d(TAG, "No language data is actually missing, initializing OCR.");
-            initializeOCR();
+            initializeOCR(); // This call might be redundant if initializeOCR was just called and found no missing languages.
             return;
         }
 
@@ -580,14 +595,17 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         if (languagesToCheck == null) {
             languagesToCheck = new HashSet<>();
         }
+        // --- START DEBUG LOGGING ---
+        Log.d(TAG, "isNoLanguagesDataMissingFromSet: Checking for languages: " + languagesToCheck.stream().map(Language::getCode).collect(Collectors.joining(", ")) + " with data type: " + dataType);
+        // --- END DEBUG LOGGING ---
         for (Language language : languagesToCheck) {
             if (isLanguageDataMissing(dataType, language)) {
-                Log.d(TAG, "Language data missing for: " + language.getName() + " (" + dataType + ")");
-                return false;
+                Log.d(TAG, "Language data missing for: " + language.getName() + " (" + dataType + "). Returning false (meaning languages ARE missing).");
+                return false; // Returns false if ANY language data is missing
             }
         }
-        Log.d(TAG, "All required language data is present.");
-        return true;
+        Log.d(TAG, "All required language data is present. Returning true (meaning NO languages are missing).");
+        return true; // Returns true if ALL language data is present
     }
 
     private boolean isLanguageDataMissing(@NonNull String dataType, @NonNull Language language) {

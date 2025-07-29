@@ -10,7 +10,7 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager; // Correct import for PreferenceManager
 
 import com.google.gson.Gson; // Added for List<String> serialization
 import com.google.gson.reflect.TypeToken; // Added for List<String> deserialization
@@ -26,6 +26,8 @@ import java.util.List; // Added for List<String>
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.github.subhamtyagi.ocr.R; // Import R for accessing string resources
 
 /**
  * A class that contains all the utility functions
@@ -215,13 +217,15 @@ public class Utils {
         if (context == null) {
             return new HashSet<>();
         }
-        final String PREFERENCE_KEY = "key_ocr_language_preference";
+        // FIX: Get the preference key from string resources to match main_preferences.xml
+        final String PREFERENCE_KEY = context.getString(R.string.key_language_for_tesseract_multi);
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         Set<String> languageCodes = sharedPreferences.getStringSet(PREFERENCE_KEY, new HashSet<>());
         Set<Language> languages = new HashSet<>();
         if (languageCodes != null) {
             // Add a default language if none are selected, to prevent crashes
             if (languageCodes.isEmpty()) {
+                // If no languages are selected, default to English
                 languages.add(new Language(context, "eng"));
             } else {
                 for (String code : languageCodes) {
@@ -236,7 +240,8 @@ public class Utils {
         if (context == null || languages == null) {
             return;
         }
-        final String PREFERENCE_KEY = "key_ocr_language_preference";
+        // FIX: Get the preference key from string resources to match main_preferences.xml
+        final String PREFERENCE_KEY = context.getString(R.string.key_language_for_tesseract_multi);
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         Set<String> languageCodes = languages.stream().map(Language::getCode).collect(Collectors.toSet());
         sharedPreferences.edit().putStringSet(PREFERENCE_KEY, languageCodes).apply();
