@@ -113,10 +113,12 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
     private ImageView mImageView;
     private LinearProgressIndicator mProgressIndicator;
     private SwipeRefreshLayout mSwipeRefreshLayout;
-    private FloatingActionButton mGalleryFab;
-    private FloatingActionButton mCameraFab;
-    private FloatingActionButton mPdfFab;
-    private FloatingActionButton mSavedFilesFab;
+
+    private LinearLayout mGalleryLayout;
+    private LinearLayout mCameraLayout;
+    private LinearLayout mSavedFilesLayout;
+    private LinearLayout mPdfLayout;
+
     private LinearLayout mDownloadLayout;
     private TextView mLanguageName;
     private ExecutorService executorService;
@@ -143,6 +145,8 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
     private ActivityResultLauncher<Intent> pickPdfLauncher;
     private ActivityResultLauncher<Intent> settingsLauncher;
 
+
+    // REPLACE YOUR ENTIRE onCreate METHOD WITH THIS
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -272,14 +276,18 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         mImageView = findViewById(R.id.source_image);
         mProgressIndicator = findViewById(R.id.progress_indicator);
         mSwipeRefreshLayout = findViewById(R.id.swipe_to_refresh);
-        mGalleryFab = findViewById(R.id.btn_scan);
-        mCameraFab = findViewById(R.id.btn_camera);
         mLanguageName = findViewById(R.id.language_name1);
         mProgressBar = findViewById(R.id.progress_bar);
         mProgressMessage = findViewById(R.id.progress_message);
         mDownloadLayout = findViewById(R.id.download_layout);
-        mSavedFilesFab = findViewById(R.id.btn_saved_files);
-        mPdfFab = findViewById(R.id.btn_pdf);
+
+        // *** THIS IS THE CHANGED PART ***
+        // Find the LinearLayouts instead of the FloatingActionButtons
+        mCameraLayout = findViewById(R.id.camera_layout);
+        mGalleryLayout = findViewById(R.id.gallery_layout);
+        mPdfLayout = findViewById(R.id.pdf_layout);
+        mSavedFilesLayout = findViewById(R.id.saved_files_layout);
+        // *** END OF CHANGED PART ***
 
         executorService = Executors.newFixedThreadPool(1);
         handler = new Handler(Looper.getMainLooper());
@@ -318,12 +326,15 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         }
     }
 
+// REPLACE YOUR ENTIRE initViews METHOD WITH THIS
 
     private void initViews() {
         Log.d(TAG, "initViews: Initializing UI elements and listeners.");
-        if (mGalleryFab != null) {
-            mGalleryFab.setOnClickListener(v -> {
-                Log.d(TAG, "Gallery FAB clicked. Starting gallery selection.");
+
+        // Using mGalleryLayout which you defined earlier
+        if (mGalleryLayout != null) {
+            mGalleryLayout.setOnClickListener(v -> {
+                Log.d(TAG, "Gallery Layout clicked. Starting gallery selection.");
                 if (isNoLanguagesDataMissingFromSet(Utils.getTrainingDataLanguages(this))) {
                     if (mImageTextReader != null) {
                         startGallerySelectionAndCrop();
@@ -335,12 +346,14 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                 }
             });
         } else {
-            Log.e(TAG, "Gallery FAB (btn_scan) not found in layout!");
+            // Updated log message for clarity
+            Log.e(TAG, "Gallery Layout (gallery_layout) not found in layout!");
         }
 
-        if (mCameraFab != null) {
-            mCameraFab.setOnClickListener(v -> {
-                Log.d(TAG, "Camera FAB clicked. Starting camera capture.");
+        // Using mCameraLayout
+        if (mCameraLayout != null) {
+            mCameraLayout.setOnClickListener(v -> {
+                Log.d(TAG, "Camera Layout clicked. Starting camera capture.");
                 if (isNoLanguagesDataMissingFromSet(Utils.getTrainingDataLanguages(this))) {
                     if (mImageTextReader != null) {
                         startCameraCaptureAndCrop();
@@ -352,25 +365,30 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                 }
             });
         } else {
-            Log.e(TAG, "Camera FAB (btn_camera) not found in layout!");
+            // Updated log message for clarity
+            Log.e(TAG, "Camera Layout (camera_layout) not found in layout!");
         }
 
-        if (mPdfFab != null) {
-            mPdfFab.setOnClickListener(v -> {
-                Log.d(TAG, "PDF FAB clicked. Opening PDF picker.");
+        // Using mPdfLayout
+        if (mPdfLayout != null) {
+            mPdfLayout.setOnClickListener(v -> {
+                Log.d(TAG, "PDF Layout clicked. Opening PDF picker.");
                 openPdfPicker();
             });
         } else {
-            Log.e(TAG, "PDF FAB (btn_pdf) not found in layout!");
+            // Updated log message for clarity
+            Log.e(TAG, "PDF Layout (pdf_layout) not found in layout!");
         }
 
-        if (mSavedFilesFab != null) {
-            mSavedFilesFab.setOnClickListener(v -> {
-                Log.d(TAG, "Saved Files FAB clicked. Opening SavedResultsActivity.");
+        // Using mSavedFilesLayout
+        if (mSavedFilesLayout != null) {
+            mSavedFilesLayout.setOnClickListener(v -> {
+                Log.d(TAG, "Saved Files Layout clicked. Opening SavedResultsActivity.");
                 openSavedFilesFolder();
             });
         } else {
-            Log.e(TAG, "Saved Files FAB (btn_saved_files) not found in layout!");
+            // Updated log message for clarity
+            Log.e(TAG, "Saved Files Layout (saved_files_layout) not found in layout!");
         }
 
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
@@ -411,7 +429,6 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
             }
         }
     }
-
     @Override
     protected void onResume() {
         super.onResume();

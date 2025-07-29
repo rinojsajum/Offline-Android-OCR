@@ -71,7 +71,7 @@
             android:textSize="20sp" />
     </LinearLayout>
 
-    <!-- Button Row with Labels -->
+    <!-- Button Row with Labels (Accessibility Optimized) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -81,102 +81,125 @@
         android:gravity="center_vertical">
 
         <LinearLayout
+            android:id="@+id/camera_layout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Open Camera"
+            android:background="?attr/selectableItemBackgroundBorderless">
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btn_camera"
                 android:layout_width="70dp"
                 android:layout_height="70dp"
-                android:contentDescription="Open Camera"
                 app:srcCompat="@drawable/ic_baseline_camera_alt_24"
                 app:maxImageSize="56dp"
-                app:fabCustomSize="70dp" /> <!-- ADDED: Custom FAB size for correct centering -->
+                app:fabCustomSize="70dp"
+                android:importantForAccessibility="no" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Camera"
                 android:textSize="12sp"
-                android:gravity="center" />
+                android:gravity="center"
+                android:importantForAccessibility="no" />
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/gallery_layout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Open Gallery"
+            android:background="?attr/selectableItemBackgroundBorderless">
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btn_scan"
                 android:layout_width="70dp"
                 android:layout_height="70dp"
-                android:contentDescription="Open Gallery"
                 app:srcCompat="@drawable/ic_baseline_photo_library_24"
                 app:maxImageSize="56dp"
-                app:fabCustomSize="70dp" /> <!-- ADDED: Custom FAB size for correct centering -->
+                app:fabCustomSize="70dp"
+                android:importantForAccessibility="no" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Gallery"
                 android:textSize="12sp"
-                android:gravity="center" />
+                android:gravity="center"
+                android:importantForAccessibility="no"/>
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/pdf_layout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Open PDF"
+            android:background="?attr/selectableItemBackgroundBorderless">
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btn_pdf"
                 android:layout_width="70dp"
                 android:layout_height="70dp"
-                android:contentDescription="Open PDF"
                 app:srcCompat="@drawable/ic_pdf"
                 app:maxImageSize="56dp"
-                app:fabCustomSize="70dp" /> <!-- ADDED: Custom FAB size for correct centering -->
+                app:fabCustomSize="70dp"
+                android:importantForAccessibility="no" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="PDF"
                 android:textSize="12sp"
-                android:gravity="center" />
+                android:gravity="center"
+                android:importantForAccessibility="no"/>
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/saved_files_layout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Open Saved Files"
+            android:background="?attr/selectableItemBackgroundBorderless">
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btn_saved_files"
                 android:layout_width="70dp"
                 android:layout_height="70dp"
-                android:contentDescription="Open Saved Files"
                 app:srcCompat="@drawable/ic_baseline_folder_open_24"
                 app:maxImageSize="56dp"
-                app:fabCustomSize="70dp" /> <!-- ADDED: Custom FAB size for correct centering -->
+                app:fabCustomSize="70dp"
+                android:importantForAccessibility="no" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Saved OCR"
                 android:textSize="12sp"
-                android:gravity="center" />
+                android:gravity="center"
+                android:importantForAccessibility="no" />
         </LinearLayout>
     </LinearLayout>
-
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
