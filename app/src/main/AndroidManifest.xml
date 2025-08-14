@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="io.github.subhamtyagi.ocr">
+    package="com.zendalona.zTextGrab">
 
     <!--
     ===========================================================================
@@ -24,7 +24,7 @@
 
         <!-- This is your main activity -->
         <activity
-            android:name=".MainActivity"
+            android:name="com.zendalona.zTextGrab.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -33,12 +33,12 @@
         </activity>
 
         <!-- Your other existing activities -->
-        <activity android:name=".SettingsActivity" />
-        <activity android:name=".SavedResultsActivity" />
+        <activity android:name="com.zendalona.zTextGrab.SettingsActivity" />
+        <activity android:name="com.zendalona.zTextGrab.SavedResultsActivity" />
 
         <!-- This is our new setup activity -->
         <activity
-            android:name=".LanguageSetupActivity"
+            android:name="com.zendalona.zTextGrab.LanguageSetupActivity"
             android:label="Language Setup"
             android:theme="@style/AppTheme" />
 

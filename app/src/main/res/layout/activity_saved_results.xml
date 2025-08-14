@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".SavedResultsActivity">
+    tools:context="com.zendalona.zTextGrab.SavedResultsActivity">
 
     <!-- Optional Toolbar (if you choose to uncomment it in Java) -->
     <!--

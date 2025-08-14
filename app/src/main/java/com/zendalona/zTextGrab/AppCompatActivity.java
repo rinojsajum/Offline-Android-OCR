@@ -1,4 +1,4 @@
-package io.github.subhamtyagi.ocr;
+package com.zendalona.zTextGrab;
 
 public class AppCompatActivity {
 }

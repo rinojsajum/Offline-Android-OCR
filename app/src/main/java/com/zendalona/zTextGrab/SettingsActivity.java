@@ -1,4 +1,4 @@
-package io.github.subhamtyagi.ocr;
+package com.zendalona.zTextGrab;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -8,9 +8,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.MultiSelectListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
-import androidx.preference.PreferenceManager;
 
 import java.util.Set;
+
 
 public class SettingsActivity extends AppCompatActivity {
 

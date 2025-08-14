@@ -1,8 +1,6 @@
-package io.github.subhamtyagi.ocr;
+package com.zendalona.zTextGrab;
 
 import android.app.Dialog;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -24,8 +22,9 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.ViewCompat; // Added for nested scrolling
+import androidx.core.view.ViewCompat;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.googlecode.tesseract.android.TessBaseAPI;

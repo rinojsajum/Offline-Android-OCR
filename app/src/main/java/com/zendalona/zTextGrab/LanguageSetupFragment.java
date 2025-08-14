@@ -1,12 +1,14 @@
-package io.github.subhamtyagi.ocr;
+package com.zendalona.zTextGrab;
 
 import android.os.Bundle;
 import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
+
 import androidx.annotation.Nullable;
 
 import java.util.Set;
+
 
 public class LanguageSetupFragment extends PreferenceFragment {
 

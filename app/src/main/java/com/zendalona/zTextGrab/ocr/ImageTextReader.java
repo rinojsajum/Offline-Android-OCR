@@ -1,4 +1,4 @@
-package io.github.subhamtyagi.ocr.ocr;
+package com.zendalona.zTextGrab.ocr;
 
 import android.graphics.Bitmap;
 
@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.github.subhamtyagi.ocr.utils.Constants;
-import io.github.subhamtyagi.ocr.utils.Language;
+import com.zendalona.zTextGrab.utils.Constants;
+import com.zendalona.zTextGrab.utils.Language;
 
 
 /**

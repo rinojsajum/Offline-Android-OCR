@@ -1,20 +1,8 @@
-package io.github.subhamtyagi.ocr;
-
-import android.view.accessibility.AccessibilityEvent;
-import android.content.Intent;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.accessibility.AccessibilityManager;
-
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-
-import com.googlecode.tesseract.android.TessBaseAPI;
-
-import java.util.List;
+package com.zendalona.zTextGrab;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -30,6 +18,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -37,10 +26,13 @@ import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.text.Html;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -50,8 +42,10 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
@@ -61,8 +55,13 @@ import com.canhub.cropper.CropImageContract;
 import com.canhub.cropper.CropImageContractOptions;
 import com.canhub.cropper.CropImageOptions;
 import com.canhub.cropper.CropImageView;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
+import com.googlecode.tesseract.android.TessBaseAPI;
+import com.zendalona.zTextGrab.ocr.ImageTextReader;
+import com.zendalona.zTextGrab.utils.Constants;
+import com.zendalona.zTextGrab.utils.Language;
+import com.zendalona.zTextGrab.utils.SpUtil;
+import com.zendalona.zTextGrab.utils.Utils;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -77,6 +76,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -84,11 +84,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import io.github.subhamtyagi.ocr.ocr.ImageTextReader;
-import io.github.subhamtyagi.ocr.utils.Constants;
-import io.github.subhamtyagi.ocr.utils.Language;
-import io.github.subhamtyagi.ocr.utils.SpUtil;
-import io.github.subhamtyagi.ocr.utils.Utils;
 
 public class MainActivity extends AppCompatActivity implements BottomSheetResultsFragment.OnPageSelectedListener, TessBaseAPI.ProgressNotifier {
 

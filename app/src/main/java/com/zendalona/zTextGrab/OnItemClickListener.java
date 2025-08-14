@@ -1,4 +1,4 @@
-package io.github.subhamtyagi.ocr;
+package com.zendalona.zTextGrab;
 
 import android.net.Uri; // Import Uri
 

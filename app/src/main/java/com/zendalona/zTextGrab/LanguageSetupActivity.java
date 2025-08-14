@@ -1,4 +1,4 @@
-package io.github.subhamtyagi.ocr;
+package com.zendalona.zTextGrab;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,13 +8,15 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.zendalona.zTextGrab.utils.Language;
+import com.zendalona.zTextGrab.utils.SpUtil;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import io.github.subhamtyagi.ocr.utils.Language;
-import io.github.subhamtyagi.ocr.utils.SpUtil;
 
 public class LanguageSetupActivity extends AppCompatActivity {
 

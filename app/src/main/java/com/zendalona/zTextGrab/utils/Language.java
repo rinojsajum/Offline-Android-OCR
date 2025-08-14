@@ -1,10 +1,10 @@
-package io.github.subhamtyagi.ocr.utils;
+package com.zendalona.zTextGrab.utils;
 
 import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import io.github.subhamtyagi.ocr.R;
+import com.zendalona.zTextGrab.R;
 
 import java.io.Serializable;
 

@@ -1,4 +1,4 @@
-package io.github.subhamtyagi.ocr.utils;
+package com.zendalona.zTextGrab.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -10,24 +10,25 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import androidx.preference.PreferenceManager; // Correct import for PreferenceManager
 
-import com.google.gson.Gson; // Added for List<String> serialization
-import com.google.gson.reflect.TypeToken; // Added for List<String> deserialization
+import androidx.preference.PreferenceManager;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.zendalona.zTextGrab.R;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.Type; // Added for Gson TypeToken
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List; // Added for List<String>
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.github.subhamtyagi.ocr.R; // Import R for accessing string resources
 
 /**
  * A class that contains all the utility functions

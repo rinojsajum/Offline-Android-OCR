@@ -1,4 +1,4 @@
-package io.github.subhamtyagi.ocr.utils;
+package com.zendalona.zTextGrab.utils;
 
 /**
  * Various constant: Self explanatory
