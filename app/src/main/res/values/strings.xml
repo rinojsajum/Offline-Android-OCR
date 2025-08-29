@@ -108,5 +108,22 @@
     <string name="pdf_page_full_readout_description">Page %1$d: %2$s</string>
     <string name="ocr_result_content_description_full">%1$s</string>
 
+    <string name="about_text">
+z.TextGrab is an offline Optical Character Recognition (OCR) tool designed for simplicity, speed, and accessibility. The app can convert text from images and PDFs into editable, searchable content in just a few taps.
+
+• Works Offline: All OCR happens on your device—no internet required.
+
+• Multi-Language Support: Recognize text in multiple languages at once.
+
+• PDF &amp; Image OCR: Extract text from single images or entire PDFs page by page.
+
+• Accessibility Friendly: Built with TalkBack support for seamless use by everyone.
+
+• Save &amp; Share: Store results as text files or copy them instantly.
+
+With z.TextGrab, your text is always private, always available, and always in your control.
+</string>
+
+
 
 </resources>

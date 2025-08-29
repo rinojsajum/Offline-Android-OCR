@@ -75,10 +75,15 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory
-        android:icon="@drawable/ic_baseline_info_16"
-        android:title="About">
+    <PreferenceCategory>
+
+        <Preference
+            android:key="key_about"
+            android:title="About z.TextGrab"
+            android:summary="Learn more about this app"
+            android:icon="@drawable/ic_baseline_info_16" />
 
     </PreferenceCategory>
+
 
 </PreferenceScreen>

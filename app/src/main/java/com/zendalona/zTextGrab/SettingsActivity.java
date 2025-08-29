@@ -63,9 +63,17 @@ public class SettingsActivity extends AppCompatActivity {
 
         @Override
         public boolean onPreferenceTreeClick(Preference preference) {
-            // This method is called when a preference is clicked.
-            // We can add logging here to confirm if the MultiSelectListPreference is clickable.
             Log.d(TAG, "onPreferenceTreeClick: Preference clicked: " + preference.getKey());
+
+            // Handle About preference click
+            if (preference.getKey().equals("key_about")) {
+                new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                        .setTitle("About z.TextGrab")
+                        .setMessage(getString(R.string.about_text)) // text from strings.xml
+                        .setPositiveButton("OK", null)
+                        .show();
+                return true; // tell Android we handled this click
+            }
 
             // If the clicked preference is the language selection, log its state
             if (preference.getKey().equals(getString(R.string.key_language_for_tesseract_multi))) {
@@ -75,6 +83,7 @@ public class SettingsActivity extends AppCompatActivity {
 
             return super.onPreferenceTreeClick(preference);
         }
+
     }
 
     public static class AdvanceSettingsFragment extends PreferenceFragmentCompat {
