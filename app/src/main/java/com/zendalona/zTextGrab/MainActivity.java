@@ -141,8 +141,6 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
     private ActivityResultLauncher<Intent> settingsLauncher;
 
 
-    // REPLACE YOUR ENTIRE onCreate METHOD WITH THIS
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -276,7 +274,6 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         mProgressMessage = findViewById(R.id.progress_message);
         mDownloadLayout = findViewById(R.id.download_layout);
 
-        // *** THIS IS THE CHANGED PART ***
         // Find the LinearLayouts instead of the FloatingActionButtons
         mCameraLayout = findViewById(R.id.camera_layout);
         mGalleryLayout = findViewById(R.id.gallery_layout);
@@ -293,7 +290,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         initViews();
     }
 
-    // *** ADDED: THIS IS THE CRITICAL LOGIC THAT CHECKS THE SETTING ***
+    // *** THIS IS THE CRITICAL LOGIC THAT CHECKS THE SETTING ***
     private void startCropOrOcr(Uri imageUri) {
         if (imageUri == null) {
             Log.e(TAG, "Image URI is null, cannot proceed.");
@@ -321,7 +318,6 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         }
     }
 
-// REPLACE YOUR ENTIRE initViews METHOD WITH THIS
 
     private void initViews() {
         Log.d(TAG, "initViews: Initializing UI elements and listeners.");

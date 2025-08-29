@@ -3,6 +3,7 @@ package com.zendalona.zTextGrab;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.MultiSelectListPreference;
@@ -50,16 +51,28 @@ public class SettingsActivity extends AppCompatActivity {
 
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-            // Listen for changes to the language selection preference
+            if (key.equals(getString(R.string.key_grayscale_image_ocr)) ||
+                    key.equals(getString(R.string.key_enable_cropping)) ||
+                    key.equals(getString(R.string.key_persist_data))) {
+
+                boolean newValue = sharedPreferences.getBoolean(key, false);
+                String announcement = newValue ? "Enabled" : "Disabled";
+
+                // Send accessibility announcement
+                View rootView = getView();
+                if (rootView != null) {
+                    rootView.announceForAccessibility(announcement);
+                }
+
+                Log.d(TAG, key + " changed: " + announcement);
+            }
+
             if (key.equals(getString(R.string.key_language_for_tesseract_multi))) {
                 Set<String> selectedLanguages = sharedPreferences.getStringSet(key, null);
-                Log.d(TAG, "onSharedPreferenceChanged: Language selection changed. New value: " + selectedLanguages);
-
-                // This log will help us confirm if the preference is correctly saving changes.
-                // The actual download logic is handled in MainActivity's onResume/initializeOCR
-                // when returning from this activity.
+                Log.d(TAG, "Language selection changed. New value: " + selectedLanguages);
             }
         }
+
 
         @Override
         public boolean onPreferenceTreeClick(Preference preference) {
