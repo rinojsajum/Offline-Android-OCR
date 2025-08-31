@@ -1390,7 +1390,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                     url = lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_STANDARD : lang.equals("eqo") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU : String.format(Constants.TESSERACT_DATA_DOWNLOAD_URL_STANDARD, lang);
                     break;
                 default:
-                    url = lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_FAST : Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU;
+                    url = lang.equals("akk") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_AKK_FAST : lang.equals("eqo") ? Constants.TESSERACT_DATA_DOWNLOAD_URL_EQU : String.format(Constants.TESSERACT_DATA_DOWNLOAD_URL_FAST, lang);
                     break;
             }
             Log.v(TAG, "Resolved download URL for " + lang + " (" + dataType + "): " + url);
@@ -1425,5 +1425,4 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
             return downloadURL;
         }
     }
-
 }

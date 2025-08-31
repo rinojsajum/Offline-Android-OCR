@@ -11,7 +11,8 @@ public class Constants {
      */
     public static final String TESSERACT_DATA_DOWNLOAD_URL_BEST = "https://github.com/tesseract-ocr/tessdata_best/raw/4.0.0/%s.traineddata";
     public static final String TESSERACT_DATA_DOWNLOAD_URL_STANDARD = "https://github.com/tesseract-ocr/tessdata/raw/4.0.0/%s.traineddata";
-    public static final String TESSERACT_DATA_DOWNLOAD_URL_FAST = "https://github.com/tesseract-ocr/tessdata_fast/raw/4.0.0/%s.traineddata";
+    // Changed the URL for 'fast' to use the more reliable 'best' training data.
+    public static final String TESSERACT_DATA_DOWNLOAD_URL_FAST = "https://github.com/tesseract-ocr/tessdata_best/raw/4.0.0/%s.traineddata";
 
     public static final String TESSERACT_DATA_DOWNLOAD_URL_EQU = "https://github.com/tesseract-ocr/tessdata/raw/3.04.00/equ.traineddata";
 
