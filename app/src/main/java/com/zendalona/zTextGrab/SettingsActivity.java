@@ -94,16 +94,10 @@ public class SettingsActivity extends AppCompatActivity {
                 Log.d(TAG, "Language Preference clicked. Current values: " + langPreference.getValues());
             }
 
+
             return super.onPreferenceTreeClick(preference);
         }
 
-    }
-
-    public static class AdvanceSettingsFragment extends PreferenceFragmentCompat {
-        @Override
-        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-            setPreferencesFromResource(R.xml.image_enhancement_preferences, rootKey);
-        }
     }
 
     public static class VariableSettingsFragment extends PreferenceFragmentCompat {

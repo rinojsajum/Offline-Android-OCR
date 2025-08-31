@@ -41,7 +41,7 @@
 
     <PreferenceCategory android:title="@string/image_enhancement">
 
-        <!-- ADD THIS BLOCK FOR THE CROPPING TOGGLE -->
+
         <SwitchPreference
             android:key="@string/key_enable_cropping"
             android:title="Enable Image Cropping"
@@ -56,12 +56,6 @@
             android:summary="@string/gray_scale_detail"
             android:title="@string/use_gray_scale_image_for_ocr" />
 
-        <PreferenceScreen
-            android:fragment="com.zendalona.zTextGrab.SettingsActivity$AdvanceSettingsFragment"
-            android:icon="@drawable/ic_baseline_functions_32"
-            android:summary="@string/advance_setting_summary"
-            android:title="@string/image_processing_functions"
-            app:dependency="@string/key_grayscale_image_ocr" />
 
     </PreferenceCategory>
 
