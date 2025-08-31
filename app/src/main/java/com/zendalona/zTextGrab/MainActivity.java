@@ -84,9 +84,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-
 public class MainActivity extends AppCompatActivity implements BottomSheetResultsFragment.OnPageSelectedListener, TessBaseAPI.ProgressNotifier {
-
 
     public static final String TAG = "MainActivity";
     private static boolean isRefresh = false;
@@ -165,6 +163,10 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         }
 
         setContentView(R.layout.activity_main);
+
+        // *** THIS IS THE NEW LINE THAT SETS THE TITLE ***
+        setTitle(R.string.app_name);
+
         Log.d(TAG, "onCreate: Activity created.");
 
         settingsLauncher = registerForActivityResult(
@@ -508,7 +510,6 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         }
     }
 
-
     private void startImageTextReaderThread(Set<Language> languages) {
         new Thread(() -> {
             Log.d(TAG, "startImageTextReaderThread: Initializing ImageTextReader in background.");
@@ -553,6 +554,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         }
         mImageTextReader = null;
         Log.d(TAG, "ImageTextReader set to null due to initialization error.");
+
     }
 
     private void downloadLanguageData(Set<Language> languagesToProcess) {
@@ -569,9 +571,9 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                 missingLanguage.add(l);
             }
         }
-        // --- START DEBUG LOGGING ---
+// --- START DEBUG LOGGING ---
         Log.d(TAG, "downloadLanguageData: Identified missing languages: " + missingLanguage.stream().map(Language::getCode).collect(Collectors.joining(", ")));
-        // --- END DEBUG LOGGING ---
+// --- END DEBUG LOGGING ---
 
         if (missingLanguage.isEmpty()) {
             Log.d(TAG, "No language data is actually missing, initializing OCR.");
@@ -596,6 +598,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                 })
                 .create();
         dialog.show();
+
     }
 
     private boolean isNoLanguagesDataMissingFromSet(Set<Language> languagesToCheck) {
@@ -603,9 +606,9 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         if (languagesToCheck == null) {
             languagesToCheck = new HashSet<>();
         }
-        // --- START DEBUG LOGGING ---
+// --- START DEBUG LOGGING ---
         Log.d(TAG, "isNoLanguagesDataMissingFromSet: Checking for languages: " + languagesToCheck.stream().map(Language::getCode).collect(Collectors.joining(", ")) + " with data type: " + dataType);
-        // --- END DEBUG LOGGING ---
+// --- END DEBUG LOGGING ---
         for (Language language : languagesToCheck) {
             if (isLanguageDataMissing(dataType, language)) {
                 Log.d(TAG, "Language data missing for: " + language.getName() + " (" + dataType + "). Returning false (meaning languages ARE missing).");
@@ -675,7 +678,6 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         return image;
     }
 
-
     private void convertImageToText(Uri imageUri) {
         Log.d(TAG, "convertImageToText: Starting image to text conversion for URI: " + imageUri.toString());
         Bitmap bitmap = null;
@@ -737,6 +739,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
             }
             cameraOutputUri = null;
         }
+
     }
 
     @Override
@@ -747,6 +750,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         showHistoryItem.setVisible(Utils.isPersistData());
         Log.d(TAG, "onCreateOptionsMenu: History item visibility set to " + showHistoryItem.isVisible());
         return true;
+
     }
 
     @Override
@@ -796,6 +800,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         } else {
             Log.w(TAG, "AccessibilityManager not available or not enabled.");
         }
+
     }
 
     @Override
@@ -819,6 +824,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                 }
             }
         });
+
     }
 
     public void saveBitmapToStorage(Bitmap bitmap) {
@@ -855,8 +861,6 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         }
     }
 
-
-
     public void showOCRResult(List<String> pageTexts) {
         if (this.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
             StringBuilder fullTextToSave = new StringBuilder();
@@ -878,8 +882,8 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         } else {
             Log.d(TAG, "showOCRResult (multi-page PDF): Activity not in RESUMED state, not showing bottom sheet.");
         }
-    }
 
+    }
 
     private void showSaveTextDialog(final String extractedText) {
         new AlertDialog.Builder(this)
@@ -1027,7 +1031,6 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                         }
                     }
                 }
-
                 handler.post(() -> {
                     isProcessingPdf = false;
                     dismissLoadingDialog(getString(R.string.processing_completed));
@@ -1422,4 +1425,5 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
             return downloadURL;
         }
     }
+
 }

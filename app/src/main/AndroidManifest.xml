@@ -4,10 +4,10 @@
     package="com.zendalona.zTextGrab">
 
     <!--
-    ===========================================================================
-    === ADDED MISSING PERMISSIONS HERE ========================================
-    ===========================================================================
-    -->
+ ===========================================================================
+ === ADDED MISSING PERMISSIONS HERE ========================================
+ ===========================================================================
+ -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- ===================================================================== -->
@@ -39,7 +39,7 @@
         <!-- This is our new setup activity -->
         <activity
             android:name="com.zendalona.zTextGrab.LanguageSetupActivity"
-            android:label="Language Setup"
+            android:label="@string/app_name"
             android:theme="@style/AppTheme" />
 
         <!-- This is the FileProvider for the camera/cropper -->

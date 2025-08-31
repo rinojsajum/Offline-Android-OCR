@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome to OCR"
+        android:text="Welcome to z.TextGrab"
         android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
 
     <TextView
@@ -20,7 +20,6 @@
         android:text="To get started, please select the default languages you want to use for text recognition. You can always add more later in the Settings menu."
         android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
-    <!-- This is where the language list from the settings will be displayed -->
     <FrameLayout
         android:id="@+id/language_list_container"
         android:layout_width="match_parent"
