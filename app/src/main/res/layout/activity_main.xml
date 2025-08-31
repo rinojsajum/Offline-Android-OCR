@@ -71,7 +71,6 @@
             android:textSize="20sp" />
     </LinearLayout>
 
-    <!-- Button Row with Labels (Accessibility Optimized) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -99,7 +98,9 @@
                 app:srcCompat="@drawable/ic_baseline_camera_alt_24"
                 app:maxImageSize="56dp"
                 app:fabCustomSize="70dp"
-                android:importantForAccessibility="no" />
+                android:importantForAccessibility="no"
+                android:clickable="false"
+                android:focusable="false" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -107,7 +108,9 @@
                 android:text="Camera"
                 android:textSize="12sp"
                 android:gravity="center"
-                android:importantForAccessibility="no" />
+                android:importantForAccessibility="no"
+                android:clickable="false"
+                android:focusable="false" />
         </LinearLayout>
 
         <LinearLayout
@@ -129,7 +132,9 @@
                 app:srcCompat="@drawable/ic_baseline_photo_library_24"
                 app:maxImageSize="56dp"
                 app:fabCustomSize="70dp"
-                android:importantForAccessibility="no" />
+                android:importantForAccessibility="no"
+                android:clickable="false"
+                android:focusable="false" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -137,7 +142,9 @@
                 android:text="Gallery"
                 android:textSize="12sp"
                 android:gravity="center"
-                android:importantForAccessibility="no"/>
+                android:importantForAccessibility="no"
+                android:clickable="false"
+                android:focusable="false"/>
         </LinearLayout>
 
         <LinearLayout
@@ -159,7 +166,9 @@
                 app:srcCompat="@drawable/ic_pdf"
                 app:maxImageSize="56dp"
                 app:fabCustomSize="70dp"
-                android:importantForAccessibility="no" />
+                android:importantForAccessibility="no"
+                android:clickable="false"
+                android:focusable="false" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -167,7 +176,9 @@
                 android:text="PDF"
                 android:textSize="12sp"
                 android:gravity="center"
-                android:importantForAccessibility="no"/>
+                android:importantForAccessibility="no"
+                android:clickable="false"
+                android:focusable="false"/>
         </LinearLayout>
 
         <LinearLayout
@@ -189,7 +200,9 @@
                 app:srcCompat="@drawable/ic_baseline_folder_open_24"
                 app:maxImageSize="56dp"
                 app:fabCustomSize="70dp"
-                android:importantForAccessibility="no" />
+                android:importantForAccessibility="no"
+                android:clickable="false"
+                android:focusable="false" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -197,7 +210,9 @@
                 android:text="Saved OCR"
                 android:textSize="12sp"
                 android:gravity="center"
-                android:importantForAccessibility="no" />
+                android:importantForAccessibility="no"
+                android:clickable="false"
+                android:focusable="false" />
         </LinearLayout>
     </LinearLayout>
     <FrameLayout
