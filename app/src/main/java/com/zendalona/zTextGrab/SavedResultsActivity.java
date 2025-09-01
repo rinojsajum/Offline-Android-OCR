@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -23,6 +26,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -281,14 +285,32 @@ public class SavedResultsActivity extends AppCompatActivity implements OnItemCli
     }
 
     private void openFileByUri(Uri fileUri) {
+        if (fileUri == null) {
+            Toast.makeText(this, "Cannot open file: file URI is null.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         StringBuilder text = new StringBuilder();
-        try (InputStream inputStream = getContentResolver().openInputStream(fileUri);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                text.append(line);
-                text.append('\n');
+        ParcelFileDescriptor pfd = null;
+        try {
+            // Use DocumentsContract.openDocument() for a more robust way to open the file from a SAF URI
+            pfd = getContentResolver().openFileDescriptor(fileUri, "r");
+            if (pfd != null) {
+                try (InputStream inputStream = new FileInputStream(pfd.getFileDescriptor());
+                     BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        text.append(line);
+                        text.append('\n');
+                    }
+                }
+            } else {
+                Toast.makeText(this, "Error: The selected file could not be opened.", Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Failed to open ParcelFileDescriptor for URI: " + fileUri.toString());
+                return;
             }
+
             if (text.length() > 0) {
                 BottomSheetResultsFragment bottomSheet = BottomSheetResultsFragment.newInstance(text.toString());
                 bottomSheet.show(getSupportFragmentManager(), "fileContentSheet");
@@ -296,12 +318,17 @@ public class SavedResultsActivity extends AppCompatActivity implements OnItemCli
                 Toast.makeText(this, "Selected file is empty.", Toast.LENGTH_SHORT).show();
             }
 
-        } catch (IOException e) {
-            Log.e(TAG, "Error reading file from URI: " + fileUri.toString(), e);
-            Toast.makeText(this, "Error reading file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        } catch (SecurityException e) {
-            Log.e(TAG, "Security error opening URI: " + fileUri.toString(), e);
-            Toast.makeText(this, "Permission to access file denied.", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) { // Catch all exceptions to prevent crashes
+            Log.e(TAG, "An unexpected error occurred while opening the file.", e);
+            Toast.makeText(this, "An unexpected error occurred. Please try again.", Toast.LENGTH_LONG).show();
+        } finally {
+            if (pfd != null) {
+                try {
+                    pfd.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Error closing ParcelFileDescriptor", e);
+                }
+            }
         }
     }
 

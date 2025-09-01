@@ -105,8 +105,8 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
         if (context instanceof OnPageSelectedListener) {
             pageSelectedListener = (OnPageSelectedListener) context;
         } else {
-            // Friend's addition for stricter checking
-            throw new RuntimeException(context.toString() + " must implement OnPageSelectedListener");
+            // Removed the crash-causing exception
+            Log.w(TAG, "Host Activity " + context.toString() + " does not implement OnPageSelectedListener. Some functionality may be disabled.");
         }
     }
 
@@ -194,8 +194,6 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                 // Your setting for accessibility
                 pageContent.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
                 pageViewContainer.addView(pageContent);
-
-                containerLayout.addView(pageViewContainer);
 
                 fullTextForActions.append("--- Page ").append(pageIndex + 1).append(" ---\n")
                         .append(currentPageText).append("\n\n");
