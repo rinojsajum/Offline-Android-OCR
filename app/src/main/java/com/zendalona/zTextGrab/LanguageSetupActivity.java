@@ -58,8 +58,8 @@ public class LanguageSetupActivity extends AppCompatActivity {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(LanguageSetupActivity.this);
                 SharedPreferences.Editor editor = prefs.edit();
 
-                // The key MUST match the key used in the preference XML.
-                final String PREFERENCE_KEY = "key_ocr_language_preference";
+                // FIX: Changed hardcoded key to use the string resource to match Utils.java
+                final String PREFERENCE_KEY = getString(R.string.key_language_for_tesseract_multi);
 
                 // Save the set of language codes.
                 editor.putStringSet(PREFERENCE_KEY, selectedCodes);
