@@ -195,7 +195,8 @@ public class SavedResultsActivity extends AppCompatActivity implements OnItemCli
                         long lastModified = cursor.getLong(lastModifiedColumn);
                         String mimeType = cursor.getString(mimeTypeColumn);
 
-                        if (mimeType != null && mimeType.equals("text/plain") && displayName.endsWith(".txt") && lastModified >= sevenDaysAgo) {
+                        // FIX: Add a condition to filter out files that have been moved to the trash
+                        if (mimeType != null && mimeType.equals("text/plain") && displayName.endsWith(".txt") && lastModified >= sevenDaysAgo && !displayName.startsWith(".trash")) {
                             Uri documentUri = DocumentsContract.buildDocumentUriUsingTree(ocrResultsTreeUri, documentId);
                             foundItems.add(new RecentFileItem(documentUri, displayName, lastModified));
                         }

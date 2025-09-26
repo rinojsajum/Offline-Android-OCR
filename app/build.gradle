@@ -33,7 +33,6 @@ android {
         }
 
         debug {
-
             def workingBranch = getGitWorkingBranch()
             def normalizedWorkingBranch = workingBranch.replaceFirst("^[^A-Za-z]+", "").replaceAll("[^0-9A-Za-z]+", "")
 
@@ -43,7 +42,7 @@ android {
             } else {
                 archivesBaseName = 'OCR_' + normalizedWorkingBranch
                 applicationIdSuffix ".dev." + normalizedWorkingBranch
-                resValue "string", "app_name", "z.TextGrab " + workingBranch
+                resValue "string", "app_name", "z.TextGrab"
             }
 
             minifyEnabled false
