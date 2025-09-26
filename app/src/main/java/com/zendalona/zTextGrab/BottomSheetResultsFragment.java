@@ -115,22 +115,17 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.bottom_sheet_dialog_results, container, false);
-        // Your addition
         Log.d(TAG, "onCreateView: Layout inflated.");
 
         containerLayout = view.findViewById(R.id.text_content_container);
-        // Your change: Assign to class member
         scrollView = view.findViewById(R.id.scroll_view_results);
 
         if (scrollView != null) {
             scrollView.setContentDescription(getString(R.string.ocr_results_scroll_view_desc));
             scrollView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-            // Your addition: Explicitly enable nested scrolling for the ScrollView
             ViewCompat.setNestedScrollingEnabled(scrollView, true);
-            // Your addition
             Log.d(TAG, "ScrollView found and nested scrolling enabled.");
         } else {
-            // Your addition
             Log.e(TAG, "ScrollView with ID 'scroll_view_results' not found in layout!");
         }
 
@@ -138,15 +133,18 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
         MaterialButton btnShare = view.findViewById(R.id.btn_share);
 
         final String textForButtons;
+        containerLayout.removeAllViews();
 
+        // -------------------------
+        // MULTI-PAGE PDF BRANCH
+        // -------------------------
         if (pageTexts != null && !pageTexts.isEmpty()) {
-            // Your addition
             Log.d(TAG, "Displaying PDF results with " + pageTexts.size() + " pages.");
             StringBuilder fullTextForActions = new StringBuilder();
 
             for (int i = 0; i < pageTexts.size(); i++) {
                 final String currentPageText = pageTexts.get(i);
-                final int pageIndex = i; // Friend's fix: make i final for lambda
+                final int pageIndex = i;
 
                 LinearLayout pageViewContainer = new LinearLayout(getContext());
                 pageViewContainer.setOrientation(LinearLayout.VERTICAL);
@@ -154,73 +152,71 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
                 );
-                // FIX: Changed R.d.page_bottom_margin to R.dimen.page_bottom_margin
                 containerParams.setMargins(0, 0, 0, (int) getResources().getDimension(R.dimen.page_bottom_margin));
                 pageViewContainer.setLayoutParams(containerParams);
                 pageViewContainer.setBackgroundResource(R.drawable.page_background);
-                pageViewContainer.setPadding(
-                        // FIX: Changed R.d.page_padding to R.dimen.page_padding
-                        (int) getResources().getDimension(R.dimen.page_padding),
-                        (int) getResources().getDimension(R.dimen.page_padding),
-                        (int) getResources().getDimension(R.dimen.page_padding),
-                        (int) getResources().getDimension(R.dimen.page_padding)
-                );
+                int padding = (int) getResources().getDimension(R.dimen.page_padding);
+                pageViewContainer.setPadding(padding, padding, padding, padding);
                 pageViewContainer.setFocusable(true);
                 pageViewContainer.setFocusableInTouchMode(true);
-                pageViewContainer.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES); // Your setting
-                // Combined content description, prioritizing friend's simpler version but keeping your ability to include full text if needed in resource string
+                pageViewContainer.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
                 pageViewContainer.setContentDescription(getString(R.string.pdf_page_content_description, pageIndex + 1));
 
-                // Friend's addition: Accessibility click support for page selection
                 pageViewContainer.setOnClickListener(v -> {
                     if (pageSelectedListener != null) {
-                        pageSelectedListener.onPageSelected(pageIndex, currentPageText);
+                        pageSelectedListener.onPageSelected(pageIndex, currentPageText != null ? currentPageText : "");
                     }
                 });
 
+                // Page label
                 TextView pageLabel = new TextView(getContext());
-                // Use pageIndex from friend's fix
                 pageLabel.setText(getString(R.string.pdf_page_label, pageIndex + 1));
                 pageLabel.setTextAppearance(getContext(), com.google.android.material.R.style.TextAppearance_MaterialComponents_Subtitle1);
-                // FIX: Changed R.d.text_margin_small to R.dimen.text_margin_small
                 pageLabel.setPadding(0, 0, 0, (int) getResources().getDimension(R.dimen.text_margin_small));
                 pageLabel.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
                 pageViewContainer.addView(pageLabel);
 
+                // Page content
                 TextView pageContent = new TextView(getContext());
-                pageContent.setText(Html.fromHtml(currentPageText));
+                String displayText = (currentPageText != null && !currentPageText.trim().isEmpty())
+                        ? currentPageText
+                        : "Scan Failed";
+                pageContent.setText(Html.fromHtml(displayText));
                 pageContent.setMovementMethod(LinkMovementMethod.getInstance());
                 pageContent.setTextIsSelectable(true);
-                // Your setting for accessibility
                 pageContent.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
                 pageViewContainer.addView(pageContent);
 
-                fullTextForActions.append("--- Page ").append(pageIndex + 1).append(" ---\n")
-                        .append(currentPageText).append("\n\n");
+                containerLayout.addView(pageViewContainer);
+
+                // Add only valid text to copy/share
+                if (currentPageText != null && !currentPageText.trim().isEmpty() && !currentPageText.contains("Scan Failed")) {
+                    fullTextForActions.append("--- Page ").append(pageIndex + 1).append(" ---\n")
+                            .append(currentPageText).append("\n\n");
+                }
             }
 
             textForButtons = fullTextForActions.toString().trim();
-        } else if (singleText != null && !singleText.isEmpty()) {
-            // Your addition
+        }
+        // -------------------------
+        // SINGLE IMAGE OCR BRANCH
+        // -------------------------
+        else if (singleText != null && !singleText.trim().isEmpty()) {
             Log.d(TAG, "Displaying single image OCR result.");
-            TextView ocrResultTextView = new TextView(getContext());
 
-            // Friend's improvement: Clean text for accessibility and button actions
+            TextView ocrResultTextView = new TextView(getContext());
             String cleanText = Html.fromHtml(singleText).toString().trim();
+            boolean isValidText = !cleanText.isEmpty() && !cleanText.contains("Scan Failed");
+
             ocrResultTextView.setText(cleanText);
             ocrResultTextView.setTextIsSelectable(true);
             ocrResultTextView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-            // Friend's improvement for content description
             ocrResultTextView.setContentDescription(cleanText);
 
-            // Friend's additions for single text handling in containerLayout
-            containerLayout.removeAllViews();
             containerLayout.addView(ocrResultTextView);
             containerLayout.setContentDescription(cleanText);
 
-            // Friend's addition for accessibility announcement on click
             containerLayout.setOnClickListener(v -> {
-                // FIX: Changed ACCBILITY_SERVICE to ACCESSIBILITY_SERVICE
                 AccessibilityManager am = (AccessibilityManager) requireContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
                 if (am != null && am.isEnabled()) {
                     AccessibilityEvent event = AccessibilityEvent.obtain(AccessibilityEvent.TYPE_ANNOUNCEMENT);
@@ -231,20 +227,28 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                 }
             });
 
-            textForButtons = cleanText; // Use cleanText from friend's logic
-        } else {
-            // Your addition
-            Log.w(TAG, "No text data found for display in bottom sheet (neither single text nor page list).");
+            textForButtons = isValidText ? cleanText : "";
+        }
+        // -------------------------
+        // EMPTY / FAILED SCAN BRANCH
+        // -------------------------
+        else {
+            Log.w(TAG, "No text data found for display in bottom sheet.");
+
             TextView noResultTextView = new TextView(getContext());
             noResultTextView.setText(R.string.no_text_found);
             noResultTextView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
             containerLayout.addView(noResultTextView);
-            // Friend's addition
-            containerLayout.setOnClickListener(null); // Clear listener if no text
-            textForButtons = "";
+
+            containerLayout.setOnClickListener(null);
+            textForButtons = ""; // No valid text to copy/share
         }
 
+        // -------------------------
+        // COPY / SHARE BUTTONS
+        // -------------------------
         setupButtons(textForButtons, btnCopy, btnShare);
+
         return view;
     }
 

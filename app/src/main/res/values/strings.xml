@@ -105,6 +105,8 @@
     <string name="app_name">z.TextGrab</string>
     <string name="welcome_message">Welcome to z.TextGrab</string>
 
+    <string name="scan_failed">Scan Failed</string>
+
 
 
     <string name="pdf_page_full_readout_description">Page %1$d: %2$s</string>
