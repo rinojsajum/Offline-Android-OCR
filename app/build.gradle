@@ -1,6 +1,6 @@
 apply plugin: 'com.android.application'
 // REMOVED THE FOLLOWING LINE WHICH WAS CAUSING THE ERROR:
-// implementation 'com.theartofdev.edmodo:android-image-cropper:2.8.0' // This line was misplaced and redundant
+// implementation 'com.thear7tofdev.edmodo:android-image-cropper:2.8.0' // This line was misplaced and redundant
 
 android {
     compileSdkVersion 35
@@ -11,9 +11,9 @@ android {
     defaultConfig {
         applicationId "com.zendalona.zTextGrab"
         minSdkVersion 24
-        targetSdkVersion 34 // Keep targetSdkVersion 33 for now
-        versionCode 16
-        versionName "5.2"
+        targetSdkVersion 35
+        versionCode 18
+        versionName "1.0.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resValue "string", "github_url", gitUrl
         resValue "string", "github_parameter_url", gitUrl+"/blob/master/parameters.md"
