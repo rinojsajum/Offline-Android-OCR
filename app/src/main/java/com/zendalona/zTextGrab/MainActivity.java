@@ -642,8 +642,19 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
 
     private void startGallerySelectionAndCrop() {
         Log.d(TAG, "startGallerySelectionAndCrop: Launching gallery image selection.");
-        galleryPickerLauncher.launch("image/*");
+
+        AccessibilityManager accessibilityManager =
+                (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
+
+        if (accessibilityManager != null && accessibilityManager.isEnabled()) {
+            mGalleryLayout.announceForAccessibility("Opening gallery");
+        }
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            galleryPickerLauncher.launch("image/*");
+        }, 300);
     }
+
 
     private void startCameraCaptureAndCrop() {
         Log.d(TAG, "startCameraCaptureAndCrop: Launching camera capture.");
