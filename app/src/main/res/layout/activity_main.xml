@@ -50,7 +50,8 @@
         android:layout_gravity="center"
         android:foregroundGravity="center"
         android:gravity="center_horizontal"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingTop="8dp">
 
         <TextView
             android:layout_width="match_parent"
