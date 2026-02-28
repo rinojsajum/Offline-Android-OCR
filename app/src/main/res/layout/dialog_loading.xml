@@ -59,4 +59,15 @@
         android:text="Processing image..."
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
+    <!-- Cancel button, shown only during PDF processing -->
+    <Button
+        android:id="@+id/btn_cancel_processing"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="16dp"
+        android:text="Cancel"
+        android:visibility="gone" />
+
 </LinearLayout>

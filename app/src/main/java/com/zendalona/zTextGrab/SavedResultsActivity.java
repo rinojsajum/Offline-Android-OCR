@@ -11,6 +11,7 @@ import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -61,13 +62,11 @@ public class SavedResultsActivity extends AppCompatActivity implements OnItemCli
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_saved_results);
 
-        // Toolbar setup (if enabled)
-        // Toolbar toolbar = findViewById(R.id.toolbar);
-        // setSupportActionBar(toolbar);
-        // if (getSupportActionBar() != null) {
-        //     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        //     getSupportActionBar().setTitle("Saved OCR Results");
-        // }
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setHomeActionContentDescription("Back");
+            getSupportActionBar().setTitle("Saved OCR Results");
+        }
 
         openFileButton = findViewById(R.id.btn_open_file_picker);
         recyclerView = findViewById(R.id.rv_saved_files);
@@ -131,6 +130,15 @@ public class SavedResultsActivity extends AppCompatActivity implements OnItemCli
 
         // Always attempt to load files. If URI is null, it will result in "No files" message.
         loadRecentSavedFilesFromSAF();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override

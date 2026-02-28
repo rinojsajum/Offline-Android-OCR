@@ -7,20 +7,7 @@
     android:orientation="vertical"
     tools:context="com.zendalona.zTextGrab.SavedResultsActivity">
 
-    <!-- Optional Toolbar (if you choose to uncomment it in Java) -->
-    <!--
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        app:titleTextColor="@android:color/white"
-        app:navigationIcon="?attr/homeAsUpIndicator"
-        android:elevation="4dp"
-        android:theme="?attr/actionBarTheme" />
-    -->
-
-    <!-- Header for Recent Files List - UPDATED TEXT (comment moved) -->
+    <!-- Header for Recent Files List -->
     <TextView
         android:id="@+id/tv_recent_files_header"
         android:layout_width="match_parent"

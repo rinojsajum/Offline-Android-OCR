@@ -33,8 +33,12 @@
         </activity>
 
         <!-- Your other existing activities -->
-        <activity android:name="com.zendalona.zTextGrab.SettingsActivity" />
-        <activity android:name="com.zendalona.zTextGrab.SavedResultsActivity" />
+        <activity
+            android:name="com.zendalona.zTextGrab.SettingsActivity"
+            android:parentActivityName="com.zendalona.zTextGrab.MainActivity" />
+        <activity
+            android:name="com.zendalona.zTextGrab.SavedResultsActivity"
+            android:parentActivityName="com.zendalona.zTextGrab.MainActivity" />
 
         <!-- This is our new setup activity -->
         <activity

@@ -33,6 +33,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -122,8 +123,10 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
     private ProgressBar loadingSpinner;
     private LinearProgressIndicator dialogProgressBar;
     private TextView loadingMessage;
+    private Button cancelProcessingButton;
     private boolean isProgressBarVisibleInDialog = false;
     private volatile boolean isProcessingPdf = false;
+    private volatile boolean isPdfCancelled = false;
     private Handler accessibilityHandler;
     private Runnable accessibilityRunnable;
     private volatile String currentAccessibilityMessage;
@@ -951,6 +954,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         Log.d(TAG, "processPdf: Starting PDF processing for URI: " + uri.toString());
         executorService.execute(() -> {
             isProcessingPdf = true;
+            isPdfCancelled = false;
             List<String> pageTexts = new ArrayList<>();
             try (ParcelFileDescriptor fileDescriptor = getContentResolver().openFileDescriptor(uri, "r");
                  PdfRenderer renderer = new PdfRenderer(fileDescriptor)) {
@@ -978,6 +982,12 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                 });
 
                 for (int i = 0; i < pageCount; i++) {
+                    // Check if cancellation was requested
+                    if (isPdfCancelled) {
+                        Log.d(TAG, "PDF processing cancelled by user at page " + (i + 1));
+                        break;
+                    }
+
                     final int currentPage = i + 1;
                     handler.post(() -> {
                         if (dialogProgressBar != null) dialogProgressBar.setProgress(currentPage);
@@ -1044,10 +1054,15 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                 }
                 handler.post(() -> {
                     isProcessingPdf = false;
-                    dismissLoadingDialog(getString(R.string.processing_completed));
-                    Log.d(TAG, "UI: PDF processing finished, loading dialog dismissed.");
-                    showOCRResult(pageTexts);
-                    Log.d(TAG, "showOCRResult called for PDF page texts.");
+                    if (isPdfCancelled) {
+                        Log.d(TAG, "PDF processing was cancelled, not showing results.");
+                        isPdfCancelled = false;
+                    } else {
+                        dismissLoadingDialog(getString(R.string.processing_completed));
+                        Log.d(TAG, "UI: PDF processing finished, loading dialog dismissed.");
+                        showOCRResult(pageTexts);
+                        Log.d(TAG, "showOCRResult called for PDF page texts.");
+                    }
                 });
 
             } catch (IOException e) {
@@ -1178,6 +1193,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         loadingSpinner = dialogView.findViewById(R.id.loading_spinner);
         dialogProgressBar = dialogView.findViewById(R.id.loading_progress_bar);
         loadingMessage = dialogView.findViewById(R.id.loading_message);
+        cancelProcessingButton = dialogView.findViewById(R.id.btn_cancel_processing);
 
         if (loadingSpinner != null) {
             loadingSpinner.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
@@ -1191,6 +1207,16 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         if (loadingSpinner != null) loadingSpinner.setVisibility(View.VISIBLE);
         if (dialogProgressBar != null) dialogProgressBar.setVisibility(View.GONE);
 
+        // Show cancel button only during PDF processing
+        if (cancelProcessingButton != null) {
+            if (isProcessingPdf) {
+                cancelProcessingButton.setVisibility(View.VISIBLE);
+                cancelProcessingButton.setOnClickListener(v -> cancelPdfProcessing());
+            } else {
+                cancelProcessingButton.setVisibility(View.GONE);
+            }
+        }
+
         builder.setView(dialogView);
         builder.setCancelable(false);
 
@@ -1198,6 +1224,29 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         loadingDialog.show();
 
         startAccessibilityAnnouncements(initialMessage);
+    }
+
+    private void cancelPdfProcessing() {
+        if (isProcessingPdf) {
+            Log.d(TAG, "PDF processing cancellation requested.");
+            isPdfCancelled = true;
+            if (mImageTextReader != null) {
+                mImageTextReader.stop();
+            }
+            isProcessingPdf = false;
+            dismissLoadingDialog("PDF processing cancelled");
+            Toast.makeText(this, "PDF processing cancelled.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onBackPressed() {
+        if (isProcessingPdf) {
+            cancelPdfProcessing();
+            return;
+        }
+        super.onBackPressed();
     }
 
     private void dismissLoadingDialog(@Nullable String finalAnnouncement) {
@@ -1214,6 +1263,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         loadingSpinner = null;
         dialogProgressBar = null;
         loadingMessage = null;
+        cancelProcessingButton = null;
     }
 
     private class ConvertImageToText implements Runnable {
