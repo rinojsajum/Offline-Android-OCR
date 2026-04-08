@@ -12,6 +12,8 @@ import java.util.Set;
 
 public class LanguageSetupFragment extends PreferenceFragment {
 
+    private static final String LEGACY_SETUP_LANGUAGE_KEY = "key_ocr_language_preference";
+
     // A variable to hold the selected language codes in memory
     private Set<String> selectedLanguageCodes = null;
 
@@ -20,8 +22,14 @@ public class LanguageSetupFragment extends PreferenceFragment {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.setup_preferences);
 
+        final String languagePreferenceKey = getString(R.string.key_language_for_tesseract_multi);
+
         // Find the language preference by its key
-        final MultiSelectListPreference languagePreference = (MultiSelectListPreference) findPreference("key_ocr_language_preference");
+        MultiSelectListPreference languagePreference = (MultiSelectListPreference) findPreference(languagePreferenceKey);
+        if (languagePreference == null) {
+            // Backward compatibility if legacy preference key still exists.
+            languagePreference = (MultiSelectListPreference) findPreference(LEGACY_SETUP_LANGUAGE_KEY);
+        }
 
         if (languagePreference != null) {
             // Set a listener that fires *immediately* when the user's selection changes
@@ -43,7 +51,10 @@ public class LanguageSetupFragment extends PreferenceFragment {
     public Set<String> getSelectedLanguageCodes() {
         // If the user hasn't changed anything, read the current value just in case.
         if (selectedLanguageCodes == null) {
-            MultiSelectListPreference pref = (MultiSelectListPreference) findPreference("key_ocr_language_preference");
+            MultiSelectListPreference pref = (MultiSelectListPreference) findPreference(getString(R.string.key_language_for_tesseract_multi));
+            if (pref == null) {
+                pref = (MultiSelectListPreference) findPreference(LEGACY_SETUP_LANGUAGE_KEY);
+            }
             if (pref != null) {
                 return pref.getValues();
             }

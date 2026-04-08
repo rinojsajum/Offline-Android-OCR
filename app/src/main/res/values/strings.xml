@@ -104,6 +104,15 @@
 
     <string name="app_name">z.TextGrab</string>
     <string name="welcome_message">Welcome to z.TextGrab</string>
+    <string name="language_setup_description_first_run">To get started, please select the default languages you want to use for text recognition. You can always add more later in the Settings menu.</string>
+    <string name="language_setup_title_first_run">Welcome - Language Setup</string>
+    <string name="language_setup_done">Done</string>
+
+    <string name="launch_language_dialog_title">Selected OCR languages</string>
+    <string name="launch_language_dialog_message">These are your currently selected languages:\n%1$s</string>
+    <string name="launch_language_dialog_continue">Continue</string>
+    <string name="launch_language_dialog_change_language">Change language</string>
+    <string name="language_default_english">English</string>
 
     <string name="scan_failed">Scan Failed</string>
 

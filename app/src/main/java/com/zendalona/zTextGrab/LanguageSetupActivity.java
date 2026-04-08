@@ -7,6 +7,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,15 +29,22 @@ public class LanguageSetupActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_language_setup);
 
+        TextView titleView = findViewById(R.id.language_setup_title);
+        TextView descriptionView = findViewById(R.id.language_setup_description);
+        Button continueButton = findViewById(R.id.button_continue);
+
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("Welcome - Language Setup");
+            getSupportActionBar().setTitle(getString(R.string.language_setup_title_first_run));
         }
+
+        titleView.setText(R.string.welcome_message);
+        descriptionView.setText(R.string.language_setup_description_first_run);
+        continueButton.setText(R.string.launch_language_dialog_continue);
 
         getFragmentManager().beginTransaction()
                 .replace(R.id.language_list_container, new LanguageSetupFragment())
                 .commit();
 
-        Button continueButton = findViewById(R.id.button_continue);
         continueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -293,6 +293,92 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         initDirectories();
         initializeOCR();
         initViews();
+
+        if (savedInstanceState == null) {
+            showLaunchLanguageDialog();
+        }
+    }
+
+    private void showLaunchLanguageDialog() {
+        String selectedLanguagesText = getSelectedLanguagesDisplayText();
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.launch_language_dialog_title)
+                .setMessage(getString(R.string.launch_language_dialog_message, selectedLanguagesText))
+                .setPositiveButton(R.string.launch_language_dialog_continue, (dialogInterface, i) -> dialogInterface.dismiss())
+                .setNegativeButton(R.string.launch_language_dialog_change_language, (dialogInterface, i) -> showLanguageSelectionDialog())
+                .setCancelable(false)
+                .show();
+    }
+
+    private void showLanguageSelectionDialog() {
+        final String[] languageNames = getResources().getStringArray(R.array.ocr_engine_language);
+        final String[] languageCodes = getResources().getStringArray(R.array.key_ocr_engine_language_value);
+
+        if (languageNames.length == 0 || languageCodes.length == 0 || languageNames.length != languageCodes.length) {
+            Toast.makeText(this, "Language list is not available.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final String preferenceKey = getString(R.string.key_language_for_tesseract_multi);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        Set<String> selectedCodes = prefs.getStringSet(preferenceKey, new HashSet<>());
+        final Set<String> workingSelection = selectedCodes == null ? new HashSet<>() : new HashSet<>(selectedCodes);
+
+        final boolean[] checkedItems = new boolean[languageCodes.length];
+        for (int i = 0; i < languageCodes.length; i++) {
+            checkedItems[i] = workingSelection.contains(languageCodes[i]);
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.select_multi_training_data_title)
+                .setMultiChoiceItems(languageNames, checkedItems, (dialog, which, isChecked) -> {
+                    if (which < 0 || which >= languageCodes.length) {
+                        return;
+                    }
+                    String code = languageCodes[which];
+                    if (isChecked) {
+                        workingSelection.add(code);
+                    } else {
+                        workingSelection.remove(code);
+                    }
+                })
+                .setPositiveButton(R.string.language_setup_done, (dialog, which) -> {
+                    if (workingSelection.isEmpty()) {
+                        Toast.makeText(this, "Please select at least one language.", Toast.LENGTH_SHORT).show();
+                        showLanguageSelectionDialog();
+                        return;
+                    }
+                    prefs.edit().putStringSet(preferenceKey, new HashSet<>(workingSelection)).apply();
+                    refreshSelectedLanguagesUi();
+                    initializeOCR();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private String getSelectedLanguagesDisplayText() {
+        Set<Language> languages = Utils.getTrainingDataLanguages(this);
+        if (languages == null || languages.isEmpty()) {
+            return getString(R.string.language_default_english);
+        }
+
+        String names = languages.stream()
+                .map(Language::getName)
+                .sorted(String::compareToIgnoreCase)
+                .collect(Collectors.joining(", "));
+
+        return names.isEmpty() ? getString(R.string.language_default_english) : names;
+    }
+
+    private void refreshSelectedLanguagesUi() {
+        Set<Language> languages = Utils.getTrainingDataLanguages(this);
+        if (languages == null) {
+            languages = new HashSet<>();
+        }
+        String selectedNames = languages.stream().map(Language::getName).collect(Collectors.joining(", "));
+        mLanguageName.setText(selectedNames);
+        Log.d(TAG, "refreshSelectedLanguagesUi: Languages=" + languages.stream().map(Language::getCode).collect(Collectors.joining(", ")));
     }
 
     // *** THIS IS THE CRITICAL LOGIC THAT CHECKS THE SETTING ***
@@ -428,14 +514,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
     @Override
     protected void onResume() {
         super.onResume();
-        Set<Language> languages = Utils.getTrainingDataLanguages(this);
-        if (languages == null) {
-            languages = new HashSet<>();
-        }
-        mLanguageName.setText(languages.stream().map(Language::getName).collect(Collectors.joining(", ")));
-        // --- START DEBUG LOGGING ---
-        Log.d(TAG, "onResume: Current languages from Utils: " + languages.stream().map(Language::getCode).collect(Collectors.joining(", ")));
-        // --- END DEBUG LOGGING ---
+        refreshSelectedLanguagesUi();
     }
 
     private void openPdfPicker() {

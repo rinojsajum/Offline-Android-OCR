@@ -8,21 +8,23 @@
     tools:context="com.zendalona.zTextGrab.LanguageSetupActivity">
 
     <TextView
+        android:id="@+id/language_setup_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="16dp"
-        android:text="Welcome to z.TextGrab"
+        android:text="@string/welcome_message"
         android:textSize="20sp" />
 
     <TextView
+        android:id="@+id/language_setup_description"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:layout_marginTop="8dp"
-        android:text="To get started, please select the default languages you want to use for text recognition. You can always add more later in the Settings menu."
+        android:text="@string/language_setup_description_first_run"
         android:textSize="14sp" />
 
     <FrameLayout
@@ -43,6 +45,6 @@
         android:layout_marginBottom="16dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:text="Continue" />
+        android:text="@string/launch_language_dialog_continue" />
 
 </LinearLayout>

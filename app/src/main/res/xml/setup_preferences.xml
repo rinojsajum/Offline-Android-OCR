@@ -10,7 +10,7 @@
     <MultiSelectListPreference
         android:entries="@array/ocr_engine_language"
         android:entryValues="@array/key_ocr_engine_language_value"
-        android:key="key_ocr_language_preference"
+        android:key="@string/key_language_for_tesseract_multi"
         android:summary="@string/pref_summary_language"
         android:title="@string/pref_title_language" />
 
