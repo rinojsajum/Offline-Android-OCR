@@ -948,7 +948,11 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
             bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
             Log.d(TAG, "showOCRResult (single text): Bottom sheet result fragment shown.");
             Utils.putLastUsedText(text, false);
-            showSaveTextDialog(text);
+            if (isSavableOcrText(text)) {
+                showSaveTextDialog(text);
+            } else {
+                Log.d(TAG, "showOCRResult (single text): OCR text invalid for save dialog, skipping save prompt.");
+            }
         } else {
             Log.d(TAG, "showOCRResult (single text): Activity not in RESUMED state, not showing bottom sheet.");
         }
@@ -971,14 +975,49 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
             Utils.putLastUsedPdfPages(pageTexts);
             Log.d(TAG, "Saved full PDF text and individual pages to history.");
 
-            showSaveTextDialog(combinedText);
+            if (hasAnySavableOcrText(pageTexts)) {
+                showSaveTextDialog(combinedText);
+            } else {
+                Log.d(TAG, "showOCRResult (multi-page PDF): No valid OCR text found across pages, skipping save prompt.");
+            }
         } else {
             Log.d(TAG, "showOCRResult (multi-page PDF): Activity not in RESUMED state, not showing bottom sheet.");
         }
 
     }
 
+    private boolean hasAnySavableOcrText(List<String> pageTexts) {
+        if (pageTexts == null || pageTexts.isEmpty()) {
+            return false;
+        }
+        for (String pageText : pageTexts) {
+            if (isSavableOcrText(pageText)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isSavableOcrText(String text) {
+        if (text == null) {
+            return false;
+        }
+        String normalized = text.trim();
+        if (normalized.isEmpty()) {
+            return false;
+        }
+        String lower = normalized.toLowerCase(Locale.ROOT);
+        return !lower.contains("scan failed")
+                && !lower.contains("ocr failed")
+                && !lower.contains("ocr engine not initialized");
+    }
+
     private void showSaveTextDialog(final String extractedText) {
+        if (!isSavableOcrText(extractedText)) {
+            Log.d(TAG, "showSaveTextDialog: Invalid OCR text, not showing save dialog.");
+            return;
+        }
+
         new AlertDialog.Builder(this)
                 .setTitle("Save Text")
                 .setMessage("Do you want to save the extracted text to a public location?")
