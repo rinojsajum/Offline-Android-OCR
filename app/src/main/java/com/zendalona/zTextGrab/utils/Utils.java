@@ -10,6 +10,7 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.util.Log;
 
 import androidx.preference.PreferenceManager;
 
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
  * A class that contains all the utility functions
  */
 public class Utils {
+    private static final String TAG = "Utils";
     // New SharedPreferences keys for history
     private static final String KEY_LAST_USED_TEXT = "last_used_text"; // Renamed from Constants.KEY_LAST_USE_IMAGE_TEXT for clarity
     private static final String KEY_LAST_USED_IS_PDF = "last_used_is_pdf";
@@ -169,6 +171,9 @@ public class Utils {
     public static void putLastUsedText(String text, boolean isPdf) {
         SpUtil.getInstance().putString(KEY_LAST_USED_TEXT, text);
         SpUtil.getInstance().putBoolean(KEY_LAST_USED_IS_PDF, isPdf);
+        if (!isPdf) {
+            SpUtil.getInstance().putString(KEY_LAST_USED_PDF_PAGES, "");
+        }
     }
 
     /**
@@ -211,7 +216,15 @@ public class Utils {
             return new ArrayList<>();
         }
         Type type = new TypeToken<List<String>>() {}.getType();
-        return gson.fromJson(json, type);
+        try {
+            List<String> pages = gson.fromJson(json, type);
+            return pages != null ? pages : new ArrayList<>();
+        } catch (RuntimeException e) {
+            Log.e(TAG, "Corrupt last-used PDF history data. Clearing stored pages.", e);
+            SpUtil.getInstance().putString(KEY_LAST_USED_PDF_PAGES, "");
+            SpUtil.getInstance().putBoolean(KEY_LAST_USED_IS_PDF, false);
+            return new ArrayList<>();
+        }
     }
 
     public static Set<Language> getTrainingDataLanguages(Context context) {

@@ -31,12 +31,29 @@ import com.googlecode.tesseract.android.TessBaseAPI;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
 
     private static final String ARG_TEXT_SINGLE = "arg_text_single";
     private static final String ARG_TEXT_LIST = "arg_text_list";
+    private static final String ARG_PAYLOAD_KEY = "arg_payload_key";
     private static final String TAG = "BottomSheetResultsFrag";
+    private static final int MAX_SINGLE_TEXT_ARG_CHARS = 120000;
+    private static final int MAX_PAGE_TEXTS_ARG_CHARS = 180000;
+
+    private static final ConcurrentHashMap<String, ResultPayload> PAYLOAD_CACHE = new ConcurrentHashMap<>();
+
+    private static class ResultPayload {
+        final String singleText;
+        final ArrayList<String> pageTexts;
+
+        ResultPayload(String singleText, ArrayList<String> pageTexts) {
+            this.singleText = singleText;
+            this.pageTexts = pageTexts;
+        }
+    }
 
     private String singleText; // Holds single image text OR concatenated PDF text
     private List<String> pageTexts; // Holds individual page texts for PDF display
@@ -68,7 +85,14 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
     public static BottomSheetResultsFragment newInstance(String text) {
         BottomSheetResultsFragment fragment = new BottomSheetResultsFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_TEXT_SINGLE, text);
+        String safeText = text == null ? "" : text;
+        if (safeText.length() <= MAX_SINGLE_TEXT_ARG_CHARS) {
+            args.putString(ARG_TEXT_SINGLE, safeText);
+        } else {
+            String key = UUID.randomUUID().toString();
+            PAYLOAD_CACHE.put(key, new ResultPayload(safeText, null));
+            args.putString(ARG_PAYLOAD_KEY, key);
+        }
         fragment.setArguments(args);
         // Your addition
         Log.d(TAG, "newInstance (single text) called.");
@@ -78,10 +102,22 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
     public static BottomSheetResultsFragment newInstanceForPdf(List<String> pageTexts) {
         BottomSheetResultsFragment fragment = new BottomSheetResultsFragment();
         Bundle args = new Bundle();
-        args.putStringArrayList(ARG_TEXT_LIST, new ArrayList<>(pageTexts));
+        ArrayList<String> safePages = pageTexts == null ? new ArrayList<>() : new ArrayList<>(pageTexts);
+        int totalChars = 0;
+        for (String page : safePages) {
+            totalChars += page == null ? 0 : page.length();
+        }
+
+        if (totalChars <= MAX_PAGE_TEXTS_ARG_CHARS) {
+            args.putStringArrayList(ARG_TEXT_LIST, safePages);
+        } else {
+            String key = UUID.randomUUID().toString();
+            PAYLOAD_CACHE.put(key, new ResultPayload(null, safePages));
+            args.putString(ARG_PAYLOAD_KEY, key);
+        }
         fragment.setArguments(args);
         // Your addition
-        Log.d(TAG, "newInstanceForPdf (multi-page text) called with " + pageTexts.size() + " pages.");
+        Log.d(TAG, "newInstanceForPdf (multi-page text) called with " + safePages.size() + " pages.");
         return fragment;
     }
 
@@ -91,6 +127,15 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
         if (getArguments() != null) {
             singleText = getArguments().getString(ARG_TEXT_SINGLE);
             pageTexts = getArguments().getStringArrayList(ARG_TEXT_LIST);
+
+            String payloadKey = getArguments().getString(ARG_PAYLOAD_KEY);
+            if (payloadKey != null && singleText == null && (pageTexts == null || pageTexts.isEmpty())) {
+                ResultPayload payload = PAYLOAD_CACHE.get(payloadKey);
+                if (payload != null) {
+                    singleText = payload.singleText;
+                    pageTexts = payload.pageTexts;
+                }
+            }
             // Your addition
             Log.d(TAG, "onCreate: Arguments retrieved. Single text present: " + (singleText != null) + ", Page texts list size: " + (pageTexts != null ? pageTexts.size() : "0"));
         } else {
@@ -117,8 +162,21 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
         View view = inflater.inflate(R.layout.bottom_sheet_dialog_results, container, false);
         Log.d(TAG, "onCreateView: Layout inflated.");
 
+        Context context = getContext();
+        if (context == null) {
+            Log.e(TAG, "onCreateView: Fragment context is null. Returning empty view.");
+            return view;
+        }
+
         containerLayout = view.findViewById(R.id.text_content_container);
         scrollView = view.findViewById(R.id.scroll_view_results);
+        MaterialButton btnCopy = view.findViewById(R.id.btn_copy);
+        MaterialButton btnShare = view.findViewById(R.id.btn_share);
+
+        if (containerLayout == null || btnCopy == null || btnShare == null) {
+            Log.e(TAG, "onCreateView: Required view(s) missing in bottom sheet layout.");
+            return view;
+        }
 
         if (scrollView != null) {
             scrollView.setContentDescription(getString(R.string.ocr_results_scroll_view_desc));
@@ -128,9 +186,6 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
         } else {
             Log.e(TAG, "ScrollView with ID 'scroll_view_results' not found in layout!");
         }
-
-        MaterialButton btnCopy = view.findViewById(R.id.btn_copy);
-        MaterialButton btnShare = view.findViewById(R.id.btn_share);
 
         final String textForButtons;
         containerLayout.removeAllViews();
@@ -146,7 +201,7 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                 final String currentPageText = pageTexts.get(i);
                 final int pageIndex = i;
 
-                LinearLayout pageViewContainer = new LinearLayout(getContext());
+                LinearLayout pageViewContainer = new LinearLayout(context);
                 pageViewContainer.setOrientation(LinearLayout.VERTICAL);
                 LinearLayout.LayoutParams containerParams = new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -169,15 +224,15 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
                 });
 
                 // Page label
-                TextView pageLabel = new TextView(getContext());
+                TextView pageLabel = new TextView(context);
                 pageLabel.setText(getString(R.string.pdf_page_label, pageIndex + 1));
-                pageLabel.setTextAppearance(getContext(), com.google.android.material.R.style.TextAppearance_MaterialComponents_Subtitle1);
+                pageLabel.setTextAppearance(context, com.google.android.material.R.style.TextAppearance_MaterialComponents_Subtitle1);
                 pageLabel.setPadding(0, 0, 0, (int) getResources().getDimension(R.dimen.text_margin_small));
                 pageLabel.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
                 pageViewContainer.addView(pageLabel);
 
                 // Page content
-                TextView pageContent = new TextView(getContext());
+                TextView pageContent = new TextView(context);
                 String displayText = (currentPageText != null && !currentPageText.trim().isEmpty())
                         ? currentPageText
                         : "Scan Failed";
@@ -204,7 +259,7 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
         else if (singleText != null && !singleText.trim().isEmpty()) {
             Log.d(TAG, "Displaying single image OCR result.");
 
-            TextView ocrResultTextView = new TextView(getContext());
+            TextView ocrResultTextView = new TextView(context);
             String cleanText = Html.fromHtml(singleText).toString().trim();
             boolean isValidText = !cleanText.isEmpty() && !cleanText.contains("Scan Failed");
 
@@ -235,7 +290,7 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
         else {
             Log.w(TAG, "No text data found for display in bottom sheet.");
 
-            TextView noResultTextView = new TextView(getContext());
+            TextView noResultTextView = new TextView(context);
             noResultTextView.setText(R.string.no_text_found);
             noResultTextView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
             containerLayout.addView(noResultTextView);
@@ -255,16 +310,23 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
     private void setupButtons(String resultantTextString, MaterialButton btnCopy, MaterialButton btnShare) {
         // Setup the Copy Button
         btnCopy.setOnClickListener(view -> {
+            Context context = getContext();
+            if (context == null) {
+                Log.w(TAG, "Copy requested while fragment is detached.");
+                return;
+            }
             // Combined null/empty check
             if (resultantTextString != null && !resultantTextString.isEmpty()) {
-                ClipboardManager clipboard = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
                 ClipData clip = ClipData.newPlainText("Copied Text", resultantTextString);
-                clipboard.setPrimaryClip(clip);
-                Toast.makeText(getContext(), R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show();
+                if (clipboard != null) {
+                    clipboard.setPrimaryClip(clip);
+                    Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show();
+                }
                 // Your addition
                 Log.d(TAG, "Text copied to clipboard.");
             } else {
-                Toast.makeText(getContext(), R.string.no_text_to_copy, Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, R.string.no_text_to_copy, Toast.LENGTH_SHORT).show();
                 // Your addition
                 Log.d(TAG, "Attempted to copy, but no text available.");
             }
@@ -272,17 +334,27 @@ public class BottomSheetResultsFragment extends BottomSheetDialogFragment {
 
         // Setup the Share Button
         btnShare.setOnClickListener(view -> {
+            Context context = getContext();
+            if (context == null) {
+                Log.w(TAG, "Share requested while fragment is detached.");
+                return;
+            }
             // Combined null/empty check
             if (resultantTextString != null && !resultantTextString.isEmpty()) {
                 Intent shareIntent = new Intent();
                 shareIntent.setAction(Intent.ACTION_SEND);
                 shareIntent.putExtra(Intent.EXTRA_TEXT, resultantTextString);
                 shareIntent.setType("text/plain");
-                startActivity(Intent.createChooser(shareIntent, getString(R.string.share_text_via)));
-                // Your addition
-                Log.d(TAG, "Share intent launched.");
+                try {
+                    startActivity(Intent.createChooser(shareIntent, getString(R.string.share_text_via)));
+                    // Your addition
+                    Log.d(TAG, "Share intent launched.");
+                } catch (Exception e) {
+                    Log.e(TAG, "Unable to launch share intent.", e);
+                    Toast.makeText(context, R.string.no_text_to_share, Toast.LENGTH_SHORT).show();
+                }
             } else {
-                Toast.makeText(getContext(), R.string.no_text_to_share, Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, R.string.no_text_to_share, Toast.LENGTH_SHORT).show();
                 // Your addition
                 Log.d(TAG, "Attempted to share, but no text available.");
             }

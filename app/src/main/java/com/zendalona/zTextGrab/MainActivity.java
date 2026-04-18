@@ -48,6 +48,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -476,6 +477,16 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             Log.d(TAG, "SwipeRefreshLayout triggered.");
             if (isNoLanguagesDataMissingFromSet(Utils.getTrainingDataLanguages(this))) {
+                List<String> pdfPageTexts = Utils.getLastUsedPdfPages();
+                boolean lastWasPdf = Utils.isLastUsedPdf();
+
+                if (lastWasPdf && hasAnyDisplayablePdfPageText(pdfPageTexts)) {
+                    showOCRResult(pdfPageTexts);
+                    Log.d(TAG, "Swipe refresh: Restored cached multi-page PDF result.");
+                    mSwipeRefreshLayout.setRefreshing(false);
+                    return;
+                }
+
                 if (mImageTextReader != null) {
                     Drawable drawable = mImageView.getDrawable();
                     if (drawable instanceof BitmapDrawable) {
@@ -861,18 +872,42 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
             Log.d(TAG, "Options menu: Settings selected, launching SettingsActivity via launcher.");
             return true;
         } else if (id == R.id.action_history) {
-            if (Utils.isLastUsedPdf()) {
+            try {
                 List<String> pdfPageTexts = Utils.getLastUsedPdfPages();
-                if (pdfPageTexts != null && !pdfPageTexts.isEmpty()) {
-                    showOCRResult(pdfPageTexts);
-                    Log.d(TAG, "Options menu: History selected, showing last used PDF page texts.");
+                String lastText = Utils.getLastUsedText();
+                boolean lastWasPdf = Utils.isLastUsedPdf();
+
+                if (lastWasPdf) {
+                    if (hasAnyDisplayablePdfPageText(pdfPageTexts)) {
+                        showOCRResult(pdfPageTexts);
+                        Log.d(TAG, "Options menu: History selected, showing last PDF result.");
+                    } else if (hasDisplayableText(lastText)) {
+                        showOCRResult(lastText);
+                        Log.d(TAG, "Options menu: History selected, PDF pages invalid, falling back to last text.");
+                    } else {
+                        Toast.makeText(this, R.string.no_text_found, Toast.LENGTH_SHORT).show();
+                        Log.w(TAG, "Options menu: History selected, no valid stored OCR result found.");
+                    }
                 } else {
-                    showOCRResult(Utils.getLastUsedText());
-                    Log.d(TAG, "Options menu: History selected, but PDF pages empty. Showing combined text.");
+                    if (hasDisplayableText(lastText)) {
+                        showOCRResult(lastText);
+                        Log.d(TAG, "Options menu: History selected, showing last image/combined text result.");
+                    } else if (hasAnyDisplayablePdfPageText(pdfPageTexts)) {
+                        showOCRResult(pdfPageTexts);
+                        Log.d(TAG, "Options menu: History selected, last text invalid, falling back to PDF pages.");
+                    } else {
+                        Toast.makeText(this, R.string.no_text_found, Toast.LENGTH_SHORT).show();
+                        Log.w(TAG, "Options menu: History selected, no valid stored OCR result found.");
+                    }
                 }
-            } else {
-                showOCRResult(Utils.getLastUsedText());
-                Log.d(TAG, "Options menu: History selected, showing last used single image text.");
+            } catch (Exception e) {
+                Log.e(TAG, "Options menu: Failed to open last result safely.", e);
+                String fallbackText = Utils.getLastUsedText();
+                if (hasDisplayableText(fallbackText)) {
+                    showOCRResult(fallbackText);
+                } else {
+                    Toast.makeText(this, R.string.no_text_found, Toast.LENGTH_SHORT).show();
+                }
             }
             return true;
         }
@@ -943,10 +978,20 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
     }
 
     public void showOCRResult(String text) {
-        if (this.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
+        if (!hasDisplayableText(text)) {
+            Log.d(TAG, "showOCRResult (single text): Empty text, not showing bottom sheet.");
+            return;
+        }
+
+        if (canShowBottomSheet()) {
             BottomSheetResultsFragment bottomSheetResultsFragment = BottomSheetResultsFragment.newInstance(text);
-            bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
-            Log.d(TAG, "showOCRResult (single text): Bottom sheet result fragment shown.");
+            try {
+                bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
+                Log.d(TAG, "showOCRResult (single text): Bottom sheet result fragment shown.");
+            } catch (IllegalStateException e) {
+                Log.e(TAG, "showOCRResult (single text): Fragment transaction failed.", e);
+                return;
+            }
             Utils.putLastUsedText(text, false);
             if (isSavableOcrText(text)) {
                 showSaveTextDialog(text);
@@ -959,17 +1004,32 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
     }
 
     public void showOCRResult(List<String> pageTexts) {
-        if (this.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
+        if (pageTexts == null || pageTexts.isEmpty()) {
+            Log.d(TAG, "showOCRResult (multi-page PDF): Empty pages list, using single-text fallback.");
+            String fallbackText = Utils.getLastUsedText();
+            if (hasDisplayableText(fallbackText)) {
+                showOCRResult(fallbackText);
+            }
+            return;
+        }
+
+        if (canShowBottomSheet()) {
             StringBuilder fullTextToSave = new StringBuilder();
             for (int i = 0; i < pageTexts.size(); i++) {
+                String pageText = pageTexts.get(i);
                 fullTextToSave.append("--- Page ").append(i + 1).append(" ---\n")
-                        .append(pageTexts.get(i)).append("\n\n");
+                        .append(pageText == null ? "" : pageText).append("\n\n");
             }
             String combinedText = fullTextToSave.toString();
 
             BottomSheetResultsFragment bottomSheetResultsFragment = BottomSheetResultsFragment.newInstanceForPdf(pageTexts);
-            bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
-            Log.d(TAG, "showOCRResult (multi-page PDF): Bottom sheet result fragment shown.");
+            try {
+                bottomSheetResultsFragment.show(getSupportFragmentManager(), "bottomSheetResultsFragment");
+                Log.d(TAG, "showOCRResult (multi-page PDF): Bottom sheet result fragment shown.");
+            } catch (IllegalStateException e) {
+                Log.e(TAG, "showOCRResult (multi-page PDF): Fragment transaction failed.", e);
+                return;
+            }
 
             Utils.putLastUsedText(combinedText, true);
             Utils.putLastUsedPdfPages(pageTexts);
@@ -986,12 +1046,56 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
 
     }
 
+    private boolean canShowBottomSheet() {
+        if (!this.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
+            Log.d(TAG, "canShowBottomSheet: Activity not in RESUMED state.");
+            return false;
+        }
+        if (isFinishing() || isDestroyed()) {
+            Log.d(TAG, "canShowBottomSheet: Activity finishing or destroyed.");
+            return false;
+        }
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        if (fragmentManager.isStateSaved()) {
+            Log.d(TAG, "canShowBottomSheet: FragmentManager state already saved.");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean hasTextContent(String text) {
+        return text != null && !text.trim().isEmpty();
+    }
+
+    private boolean hasDisplayableText(String text) {
+        if (!hasTextContent(text)) {
+            return false;
+        }
+        String lower = text.trim().toLowerCase(Locale.ROOT);
+        return !lower.equals("scan failed")
+                && !lower.equals("ocr failed")
+                && !lower.contains("ocr engine not initialized");
+    }
+
     private boolean hasAnySavableOcrText(List<String> pageTexts) {
         if (pageTexts == null || pageTexts.isEmpty()) {
             return false;
         }
         for (String pageText : pageTexts) {
             if (isSavableOcrText(pageText)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasAnyDisplayablePdfPageText(List<String> pageTexts) {
+        if (pageTexts == null || pageTexts.isEmpty()) {
+            return false;
+        }
+        for (String pageText : pageTexts) {
+            if (hasDisplayableText(pageText)) {
                 return true;
             }
         }
@@ -1120,20 +1224,14 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                     PdfRenderer.Page page = null;
                     Bitmap originalBitmap = null;
                     Bitmap processedBitmap = null;
+                    Bitmap fallbackBitmap = null;
+                    Bitmap fallbackProcessedBitmap = null;
                     try {
                         page = renderer.openPage(i);
                         Log.d(TAG, "Opened PDF page: " + (i + 1));
 
-                        float targetDpi = 200f;
-                        int width = (int) (page.getWidth() / 72f * targetDpi);
-                        int height = (int) (page.getHeight() / 72f * targetDpi);
-                        originalBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-
-                        Matrix matrix = new Matrix();
-                        matrix.postScale((float) width / page.getWidth(), (float) height / page.getHeight());
-                        Rect clip = new Rect(0, 0, width, height);
-                        page.render(originalBitmap, clip, matrix, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                        Log.i(TAG, "Page " + (i + 1) + " successfully rendered AND SCALED. Dimensions: " + originalBitmap.getWidth() + "x" + originalBitmap.getHeight());
+                        originalBitmap = renderPdfPageToBitmap(page, 200f);
+                        Log.i(TAG, "Page " + (i + 1) + " rendered (initial pass) at 200 DPI. Dimensions: " + originalBitmap.getWidth() + "x" + originalBitmap.getHeight());
 
                         if (i == 0 && originalBitmap != null) {
                             final Bitmap previewBitmap = originalBitmap.copy(originalBitmap.getConfig(), false);
@@ -1147,15 +1245,33 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
                         processedBitmap = preprocessBitmap(originalBitmap);
                         Log.d(TAG, "Page " + (i + 1) + " preprocessed.");
 
-                        if (mImageTextReader != null) {
-                            String result = mImageTextReader.getTextFromBitmap(processedBitmap);
-                            pageTexts.add(Html.fromHtml(result != null ? result : "").toString().trim());
-                            Log.d(TAG, "OCR result for Page " + (i + 1) + ": " + (result != null ? result.substring(0, Math.min(result.length(), 100)) + "..." : "No text found"));
-                        } else {
-                            Log.e(TAG, "ImageTextReader is not initialized for PDF OCR on Page " + (i + 1) + ". Skipping OCR for this page.");
-                            pageTexts.add("OCR failed for Page " + (i + 1) + ": ImageTextReader not ready.");
+                        String initialResult = runPdfOcrPass(processedBitmap, i + 1, "initial");
+                        String finalResult = initialResult;
+
+                        if (isFailedOcrText(initialResult)) {
+                            Log.w(TAG, "Page " + (i + 1) + " initial OCR returned empty/failed. Retrying at higher DPI.");
+                            fallbackBitmap = renderPdfPageToBitmap(page, 280f);
+                            fallbackProcessedBitmap = preprocessBitmap(fallbackBitmap);
+                            String fallbackResult = runPdfOcrPass(fallbackProcessedBitmap, i + 1, "fallback");
+                            if (!isFailedOcrText(fallbackResult)) {
+                                finalResult = fallbackResult;
+                                Log.i(TAG, "Page " + (i + 1) + " OCR recovered on fallback pass.");
+                            } else {
+                                finalResult = fallbackResult;
+                                Log.w(TAG, "Page " + (i + 1) + " OCR still failed after fallback pass.");
+                            }
                         }
+
+                        pageTexts.add(cleanOcrText(finalResult));
                     } finally {
+                        if (fallbackProcessedBitmap != null && !fallbackProcessedBitmap.isRecycled()) {
+                            fallbackProcessedBitmap.recycle();
+                            Log.d(TAG, "Fallback processed bitmap for page " + (i + 1) + " recycled.");
+                        }
+                        if (fallbackBitmap != null && !fallbackBitmap.isRecycled()) {
+                            fallbackBitmap.recycle();
+                            Log.d(TAG, "Fallback original bitmap for page " + (i + 1) + " recycled.");
+                        }
                         if (processedBitmap != null && !processedBitmap.isRecycled()) {
                             processedBitmap.recycle();
                             Log.d(TAG, "Processed bitmap for page " + (i + 1) + " recycled.");
@@ -1201,6 +1317,55 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         });
     }
 
+    private Bitmap renderPdfPageToBitmap(PdfRenderer.Page page, float targetDpi) {
+        int width = Math.max(1, Math.round(page.getWidth() / 72f * targetDpi));
+        int height = Math.max(1, Math.round(page.getHeight() / 72f * targetDpi));
+        Bitmap renderedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Matrix matrix = new Matrix();
+        matrix.postScale((float) width / page.getWidth(), (float) height / page.getHeight());
+        Rect clip = new Rect(0, 0, width, height);
+        page.render(renderedBitmap, clip, matrix, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
+        return renderedBitmap;
+    }
+
+    private String runPdfOcrPass(Bitmap bitmap, int pageNumber, String passLabel) {
+        if (mImageTextReader == null) {
+            String msg = "OCR failed for Page " + pageNumber + " (" + passLabel + "): ImageTextReader not ready.";
+            Log.e(TAG, msg);
+            return msg;
+        }
+        if (bitmap == null || bitmap.isRecycled()) {
+            String msg = "OCR failed for Page " + pageNumber + " (" + passLabel + "): Invalid page bitmap.";
+            Log.e(TAG, msg);
+            return msg;
+        }
+
+        try {
+            mImageTextReader.clearPreviousImage();
+            String result = mImageTextReader.getTextFromBitmap(bitmap);
+            String cleanResult = cleanOcrText(result);
+            Log.d(TAG, "OCR " + passLabel + " result for Page " + pageNumber + ": " +
+                    (cleanResult.isEmpty() ? "<empty>" : cleanResult.substring(0, Math.min(cleanResult.length(), 100)) + "..."));
+            return result != null ? result : "";
+        } catch (Exception e) {
+            String msg = "OCR failed for Page " + pageNumber + " (" + passLabel + "): " + e.getLocalizedMessage();
+            Log.e(TAG, msg, e);
+            return msg;
+        }
+    }
+
+    private String cleanOcrText(String text) {
+        return Html.fromHtml(text != null ? text : "").toString().trim();
+    }
+
+    private boolean isFailedOcrText(String text) {
+        String normalized = cleanOcrText(text).toLowerCase(Locale.ROOT);
+        return normalized.isEmpty()
+                || normalized.contains("scan failed")
+                || normalized.contains("ocr failed")
+                || normalized.contains("ocr engine not initialized");
+    }
+
     private Bitmap preprocessBitmap(Bitmap bmpOriginal) {
         Log.d(TAG, "preprocessBitmap: Starting image preprocessing. Original dimensions: " + bmpOriginal.getWidth() + "x" + bmpOriginal.getHeight());
         int width = bmpOriginal.getWidth();
@@ -1220,7 +1385,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
         int[] pixels = new int[width * height];
         bmpGrayscale.getPixels(pixels, 0, width, 0, 0, width, height);
 
-        int threshold = 128;
+        int threshold = calculateOtsuThreshold(pixels);
         Log.d(TAG, "Applying binarization with threshold: " + threshold);
 
         for (int y = 0; y < height; y++) {
@@ -1245,6 +1410,49 @@ public class MainActivity extends AppCompatActivity implements BottomSheetResult
 
         Log.d(TAG, "preprocessBitmap: Finished preprocessing. Returning binarized bitmap.");
         return bmpBinarized;
+    }
+
+    private int calculateOtsuThreshold(int[] pixels) {
+        int[] histogram = new int[256];
+        for (int pixel : pixels) {
+            int gray = Color.red(pixel) & 0xFF;
+            histogram[gray]++;
+        }
+
+        int total = pixels.length;
+        long sum = 0;
+        for (int i = 0; i < 256; i++) {
+            sum += (long) i * histogram[i];
+        }
+
+        long sumBackground = 0;
+        int weightBackground = 0;
+        double maxVariance = -1.0;
+        int threshold = 128;
+
+        for (int i = 0; i < 256; i++) {
+            weightBackground += histogram[i];
+            if (weightBackground == 0) {
+                continue;
+            }
+
+            int weightForeground = total - weightBackground;
+            if (weightForeground == 0) {
+                break;
+            }
+
+            sumBackground += (long) i * histogram[i];
+            double meanBackground = (double) sumBackground / weightBackground;
+            double meanForeground = (double) (sum - sumBackground) / weightForeground;
+            double diff = meanBackground - meanForeground;
+            double betweenClassVariance = (double) weightBackground * weightForeground * diff * diff;
+
+            if (betweenClassVariance > maxVariance) {
+                maxVariance = betweenClassVariance;
+                threshold = i;
+            }
+        }
+        return threshold;
     }
 
     private void saveBitmapToFile(Context context, Bitmap bitmap, String filename) {
